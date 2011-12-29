@@ -50,7 +50,6 @@ proc nodouble { var } {
 # Proc gestion du service
 proc my_rehash {} {
   global mysock
-  close $mysock(sock)
   puts "Chargement des paramètres de configurations."
   source config.tcl
   puts "Chargement des outils."
