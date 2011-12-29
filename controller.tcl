@@ -7,13 +7,15 @@ proc fsend {sock data} {
   puts $sock $data
 }
 
-proc bot_init {} {
+proc bot_init { nick user host gecos } {
   global mysock
-  fsend $mysock(sock) "TKL + Q * $mysock(nick) $mysock(numeric) 0 0 :Reserved for services"
-  fsend $mysock(sock) "NICK $mysock(nick) 0 0 $mysock(username) $mysock(hostname) $mysock(servername) [unixtime] +oSqB * * :$mysock(realname)"
+  fsend $mysock(sock) "TKL + Q * $nick $mysock(servername) 0 [unixtime] :Reserved for Game Server"
+  fsend $mysock(sock) "NICK $nick 0 [unixtime] $user $host $mysock(servername) 0 +oSqB * * :$gecos"
   join_chan $mysock(nick) $mysock(adminchan)
-  foreach chan $mysock(chanlist) {
-    join_chan $mysock(nick) $chan
+  if {$nick==$mysock(nick)} {
+    foreach chan $mysock(chanlist) {
+      join_chan $mysock(nick) $chan
+    }
   }
 }
 
@@ -50,14 +52,14 @@ proc socket_control {sock} {
     fsend $sock "PROTOCTL NOQUIT NICKv2 UMODE2 VL SJ3 NS TKLEXT CLK"
     fsend $sock "PASS $mysock(password)"
     fsend $sock "SERVER $mysock(servername) 1 :U2310-Fh6XiOoEe-$mysock(numeric) TCL Game Server V.$mysock(version)"
-    bot_init
+    bot_init $mysock(nick) $mysock(username) $mysock(hostname) $mysock(realname)
     fsend $sock "NETINFO 2 [expr [unixtime]] 2310 * 0 0 0 :$mysock(networkname)"
     fsend $sock "EOS"
     return 0
   }
 
   if {[lindex $arg 0]=="PING"} {
-    fsend $sock "PONG [lindex $arg 1]"; return 0
+    fsend $sock "PONG $mysock(servername) :[lindex $arg 1]"; return 0
   }
   if {[lindex $arg 0]=="NETINFO"} {
     write_pid; return 0
@@ -69,12 +71,12 @@ proc socket_control {sock} {
     set comm [stripmirc [list [string range [lindex $arg 3] 1 end] [lrange $arg 4 end]]]
     if {[string match $mysock(root) [string range [lindex $arg 0] 1 end]] || [string match Yuki [string range [lindex $arg 0] 1 end]]} {
       if {[string equal $mysock(cmdchar) [lindex $comm 0]]} {
-        fsend $sock [lrange $comm 1 end]
+        fsend $sock [join [lrange $comm 1 end]]
       }
       # Commande !rehash
       if {[string equal "$mysock(cmdchar)rehash" [lindex $comm 0]]} {
         my_rehash
-        fsend $sock ":$mysock(nick) PRIVMSG #services :\00310Rehash par $from"
+        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00310Rehash par $from"
       }
       # Commande !test
       if {[string equal -nocase "$mysock(cmdchar)test" [lindex $comm 0]]} {
@@ -126,7 +128,7 @@ proc socket_control {sock} {
     }
     return 0
   }
-  if {[lindex $arg 1]=="KILL"&&[lindex $arg 2]==$mysock(nick)} { bot_init; return 0 }
+  if {[lindex $arg 1]=="KILL"&&[lindex $arg 2]==$mysock(nick)} { bot_init $mysock(nick) $mysock(username) $mysock(hostname) $mysock(realname); return 0 }
   if {[lindex $arg 1]=="KICK"&&[lindex $arg 3]==$mysock(nick)} { join_chan $mysock(nick) [lindex $arg 2]; return 0 }
 }
 
