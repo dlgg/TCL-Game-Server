@@ -42,5 +42,5 @@ proc pl_control { sockpl } {
   }
 }
 
-puts "Initialisation du serveur de PartyLine"
+puts "Serveur de PartyLine chargé."
 set pl 1
