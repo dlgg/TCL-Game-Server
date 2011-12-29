@@ -31,6 +31,9 @@ proc join_chan {bot chan} {
       fsend $mysock(sock) ":$bot JOIN $chan"
       fsend $mysock(sock) ":$bot MODE $chan +ao $mysock(nick) $mysock(nick)"
     }
+    lappend $mysock(mychans) $chan
+    set mysock(mychans) [join [nodouble $mysock(mychans)]]
+    puts "My chans are : $mysock(mychans)"
   }
 }
 
@@ -64,6 +67,26 @@ proc socket_control {sock} {
   if {[lindex $arg 0]=="NETINFO"} {
     write_pid; return 0
   }
+
+  #<<< :Yume JOIN #blabla,#opers
+  if {[lindex $arg 1]=="JOIN"} {
+    set nick [string range [lindex $arg 0] 1 end]
+    set chans [join [split [lindex $arg 2] ,]]
+    foreach chan $chans {
+      if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]]} {
+        lappend $mysock(users)($chan) $nick
+      }
+    }
+  }
+  #<<< @1 SJOIN 1325144112 #Poker :Yume 
+  if {[lindex $arg 1]=="SJOIN"} {
+    set nick [string range [lindex $arg 4] 1 end]
+    set chans [join [split [lindex $arg 2] ,]]
+    foreach chan $chans {
+      lappend $mysock(users)($chan) $nick
+    }
+  }
+  #<<< :Yume PART #Poker
 
   if {[lindex $arg 1]=="PRIVMSG"} {
     set from [string range [lindex $arg 0] 1 end]

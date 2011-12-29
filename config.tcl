@@ -33,6 +33,9 @@ if {[info exists pl]} {
   set mysock(pl) ""
 }
 set numeric($mysock(numeric)) $mysock(servername)
+set mysock(users)(description) "Array pour les utilisateurs présents sur un chan"
+set mysock(mychans) $mysock(adminchan)
+
 #set mysock(sock) ""
 #set mysock(sockpl) ""
 #set mysock(server) "0"
