@@ -59,7 +59,7 @@ proc socket_control {sock} {
   }
 
   if {[lindex $arg 0]=="PING"} {
-    fsend $sock "PONG $mysock(servername) :[lindex $arg 1]"; return 0
+    fsend $sock "PONG $mysock(servername) [lindex $arg 1]"; return 0
   }
   if {[lindex $arg 0]=="NETINFO"} {
     write_pid; return 0
