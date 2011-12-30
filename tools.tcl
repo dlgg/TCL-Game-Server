@@ -89,10 +89,10 @@ proc join_chan {bot chan} {
   } else {
     if {$bot==$mysock(nick)} {
       fsend $mysock(sock) ":$bot JOIN $chan"
-      fsend $mysock(sock) ":$bot MODE $chan +qo $mysock(nick) $mysock(nick)"
+      fsend $mysock(sock) ":$bot MODE $chan +qo $bot $bot"
     } else {
       fsend $mysock(sock) ":$bot JOIN $chan"
-      fsend $mysock(sock) ":$bot MODE $chan +ao $mysock(nick) $mysock(nick)"
+      fsend $mysock(sock) ":$bot MODE $chan +ao $bot $bot"
     }
     lappend $mysock(mychans) $chan
     set mysock(mychans) [join [nodouble $mysock(mychans)]]
