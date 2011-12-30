@@ -96,7 +96,7 @@ proc join_chan {bot chan} {
       fsend $mysock(sock) ":$bot JOIN $chan"
       fsend $mysock(sock) ":$bot MODE $chan +ao $bot $bot"
     }
-    lappend $mysock(mychans) $chan
+    lappend mysock(mychans) $chan
     set mysock(mychans) [join [nodouble $mysock(mychans)]]
     puts "My chans are : $mysock(mychans)"
   }
