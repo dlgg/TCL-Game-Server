@@ -53,10 +53,10 @@ set mysock(users-$mysock(uno-chan)) ""
 
 proc uno_control_pub { nick text } {
   # nick uhost hand chan arg
-  global mysock
+  global mysock UnoOn
   fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PUB \002 $nick > [join $text]"
   if {[string equal -nocase "!uno" [lindex $text 0]]} { UnoInit $nick "none" "-" $mysock(uno-chan) "$text" }
-  if {[string equal -nocase "!uno-reset" [lindex $text 0]]} { UnoReset }
+  if {[string equal -nocase "!uno-reset" [lindex $text 0]]} { UnoReset; set UnoOn 0 }
 }
 
 proc uno_control_priv { nick text } {
@@ -184,7 +184,130 @@ proc UnoNext {} {
  return
 }
 
-proc UnoStart {} { unomsg "[unoad] Attente finie" }
+#
+# Start a new game
+#
+proc UnoStart {} {
+  global UnoChan UnoOn UnoCycleTime UnoRobot Debug UnoIDX UnoStartTime UnoPlayers RoundRobin ThisPlayer ThisPlayerIDX UnoDeck DiscardPile UnoMode UnoHand PlayCard AutoSkipPeriod
+  global UnoSkipTimer UnPlayedRounds UnoStopAfter NickColor
+return 0
+  if {$UnoOn == 0} {return}
+  if {[llength $RoundRobin] == 0} {
+    unomsg "[unoad] \00300,03Aucun joueur, prochain jeu dans $UnoCycleTime secondes. \003"
+    incr UnPlayedRounds
+    if {($UnoStopAfter > 0)&&($UnPlayedRounds >= $UnoStopAfter)} {
+      unomsg "[unoad] \00300,06Partie stoppée, $UnoStopAfter tours non joués. Tapez !uno pour recommencer une partie.\003"
+      set UnoOn 0
+      after 1000 "UnoStop $UnoRobot $UnoRobot none $UnoChan none"
+      return
+    }
+###
+    UnoCycle
+    return
+  }
+
+  # Bot Joins If One Player
+  if {[llength $RoundRobin] == 1} {
+    incr UnoPlayers
+
+    lappend RoundRobin "$UnoRobot"
+    lappend UnoIDX "$UnoRobot"
+
+    if [info exist UnoHand($UnoRobot)] {unset UnoHand($UnoRobot)}
+    if [info exist NickColor($UnoRobot)] {unset NickColor($UnoRobot)}
+
+    set UnoHand($UnoRobot) ""
+    set NickColor($UnoRobot) [colornick $UnoPlayers]
+
+    unomsg "[nikclr $UnoRobot]\003 rejoint la partie [unoad]\003"
+    putlog "4UNO : 2$UnoRobot rejoint la partie."
+    UnoShuffle 7
+
+    while {[llength $UnoHand($UnoRobot)] != 7} {
+      set pcardnum [rand [llength $UnoDeck]]
+      set pcard [lindex $UnoDeck $pcardnum]
+      set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
+      lappend UnoHand($UnoRobot) "$pcard"
+    }
+    if {$Debug > 1} { unolog $UnoRobot $UnoHand($UnoRobot) }
+  }
+###
+ unomsg "\0030,6 Bienvenue dans le jeu de \003 [unoad]\003"
+ unomsg "\0030,10 \002$UnoPlayers\002 joueurs dans cette partie \0030,6 $RoundRobin \003"
+
+ set UnoMode 2
+ set ThisPlayer [lindex $RoundRobin 0]
+
+ # Draw Card From Deck - First Top Card
+
+ set DiscardPile ""
+ set pcardnum [rand [llength $UnoDeck]]
+ set pcard [lindex $UnoDeck $pcardnum]
+
+ # Play Doesnt Start With A Wild Card
+
+ while {[string range $pcard 0 0] == "W"} {
+  set pcardnum [rand [llength $UnoDeck]]
+  set pcard [lindex $UnoDeck $pcardnum]
+ }
+
+ set PlayCard $pcard
+
+ set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
+
+ set Card [CardColor $pcard]
+
+ unomsg "[nikclr $ThisPlayer]\003 commence. La première carte est $Card \003."
+
+ set Card [CardColorAll $ThisPlayer]
+
+ showcards $ThisPlayerIDX $Card
+
+ set UnoStartTime [unixtime]
+
+ # Start Auto-Skip Timer
+
+ set UnoSkipTimer [timer $AutoSkipPeriod UnoAutoSkip]
+
+ set UnPlayedRounds 0
+ return
+}
+
+#
+# Stop a game
+#
+proc UnoStop {nick uhost hand chan arg} {
+ global Debug UnoChan UnoOn UnoPaused UnPlayedRounds UnoStartTimer UnoSkipTimer UnoCycleTimer
+ global mysock
+ if {$chan != $UnoChan} {return}
+ catch {after cancel $UnoStartTimer}
+ catch {after cancel $UnoSkipTimer}
+ catch {after cancel $UnoCycleTimer}
+ unomsg "[unoad]\00306 Partie stoppée par \00304\[\00312$nick\00304\]\003"
+ puts "UNO : Partie stoppée par $nick sur $chan."
+ fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO :\017 Partie stoppée par \00302$nick\017 sur \00302$chan\017."
+ set UnoOn 0
+ set UnoPaused 0
+ set UnPlayedRounds 0
+ #UnoUnbindCmds
+ UnoReset
+ return
+}
+
+#
+# Cycle a new game
+#
+proc UnoCycle {} {
+ global UnoOn UnoMode UnoCycleTime UnoCycleTimer UnoSkipTimer
+ if {$UnoOn == 0} {return}
+ set UnoMode 4
+ catch {after cancel $UnoSkipTimer}
+ set AdTime [expr $UnoCycleTime /2]
+ set UnoAdTimer [after [expr {int($AdTime*1000)}] UnoScoreAdvertise]
+ #set UnoCycleTimer [after [expr {int($UnoCycleTime*1000)}] UnoNext]
+ return
+}
+
 #
 # Reset Game Variables
 #
@@ -392,134 +515,7 @@ proc UnoUnbindCmds {} {
  catch {unbind pub - st UnoCardStats}
 }
 
-#
-# Stop a game
-#
-proc UnoStop {nick uhost hand chan arg} {
- global Debug UnoChan UnoOn UnoPaused UnPlayedRounds UnoStartTimer UnoSkipTimer UnoCycleTimer
 
- if {$chan != $UnoChan} {return}
-
- catch {killutimer $UnoStartTimer}
- catch {killtimer $UnoSkipTimer}
- catch {killutimer $UnoCycleTimer}
-
- unomsg "[unoad]\00306 Partie stoppée par \00304\[\00312$nick\00304\]\003"
- putlog "4UNO : Partie stoppée par 2$nick sur 2$chan."
- set UnoOn 0
- set UnoPaused 0
- set UnPlayedRounds 0
-
- UnoUnbindCmds
- UnoReset
-
- return
-}
-
-
-#
-# Start a new game
-#
-proc UnoStart {} {
- global UnoChan UnoOn UnoCycleTime UnoRobot Debug UnoIDX UnoStartTime UnoPlayers RoundRobin ThisPlayer ThisPlayerIDX UnoDeck DiscardPile UnoMode UnoHand PlayCard AutoSkipPeriod
- global UnoSkipTimer UnPlayedRounds UnoStopAfter NickColor
-
- if {$UnoOn == 0} {return}
-
- if {[llength $RoundRobin] == 0} {
-  unomsg "[unoad] \0030,3Aucun joueur, prochain jeu dans $UnoCycleTime secondes. \003"
-  incr UnPlayedRounds
-  if {($UnoStopAfter > 0)&&($UnPlayedRounds >= $UnoStopAfter)} {
-    unomsg "[unoad] \0030,6Partie stoppée, $UnoStopAfter tours non joués. Tapez !uno pour recommencer une partie.\003"
-    set UnoOn 0
-    utimer 1 "UnoStop $UnoRobot $UnoRobot none $UnoChan none"
-    return
-  }
-  UnoCycle
-  return
- }
-
- # Bot Joins If One Player
-
- if {[llength $RoundRobin] == 1} {
-  incr UnoPlayers
-
-  lappend RoundRobin "$UnoRobot"
-  lappend UnoIDX "$UnoRobot"
-
-  if [info exist UnoHand($UnoRobot)] {unset UnoHand($UnoRobot)}
-  if [info exist NickColor($UnoRobot)] {unset NickColor($UnoRobot)}
-
-  set UnoHand($UnoRobot) ""
-  set NickColor($UnoRobot) [colornick $UnoPlayers]
-
-  unomsg "[nikclr $UnoRobot]\003 rejoint la partie [unoad]\003"
-  putlog "4UNO : 2$UnoRobot rejoint la partie."
-  UnoShuffle 7
-
-  while {[llength $UnoHand($UnoRobot)] != 7} {
-   set pcardnum [rand [llength $UnoDeck]]
-   set pcard [lindex $UnoDeck $pcardnum]
-   set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
-   lappend UnoHand($UnoRobot) "$pcard"
-  }
-  if {$Debug > 1} { unolog $UnoRobot $UnoHand($UnoRobot) }
- }
-
- unomsg "\0030,6 Bienvenue dans le jeu de \003 [unoad]\003"
- unomsg "\0030,10 \002$UnoPlayers\002 joueurs dans cette partie \0030,6 $RoundRobin \003"
-
- set UnoMode 2
- set ThisPlayer [lindex $RoundRobin 0]
-
- # Draw Card From Deck - First Top Card
-
- set DiscardPile ""
- set pcardnum [rand [llength $UnoDeck]]
- set pcard [lindex $UnoDeck $pcardnum]
-
- # Play Doesnt Start With A Wild Card
-
- while {[string range $pcard 0 0] == "W"} {
-  set pcardnum [rand [llength $UnoDeck]]
-  set pcard [lindex $UnoDeck $pcardnum]
- }
-
- set PlayCard $pcard
-
- set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
-
- set Card [CardColor $pcard]
-
- unomsg "[nikclr $ThisPlayer]\003 commence. La première carte est $Card \003."
-
- set Card [CardColorAll $ThisPlayer]
-
- showcards $ThisPlayerIDX $Card
-
- set UnoStartTime [unixtime]
-
- # Start Auto-Skip Timer
-
- set UnoSkipTimer [timer $AutoSkipPeriod UnoAutoSkip]
-
- set UnPlayedRounds 0
- return
-}
-
-#
-# Cycle a new game
-#
-proc UnoCycle {} {
- global UnoOn UnoMode UnoCycleTime UnoCycleTimer UnoSkipTimer
- if {$UnoOn == 0} {return}
- set UnoMode 4
- catch {killtimer $UnoSkipTimer}
- set AdTime [expr $UnoCycleTime /2]
- set UnoAdTimer [utimer $AdTime UnoScoreAdvertise]
- set UnoCycleTimer [utimer $UnoCycleTime UnoNext]
- return
-}
 
 #
 # Add a player
