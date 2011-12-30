@@ -19,6 +19,7 @@ proc socket_control {sock} {
     fsend $sock "PASS $mysock(password)"
     fsend $sock "SERVER $mysock(servername) 1 :U2310-Fh6XiOoEe-$mysock(numeric) TCL Game Server V.$mysock(version)"
     bot_init $mysock(nick) $mysock(username) $mysock(hostname) $mysock(realname)
+    game_init
     fsend $sock "NETINFO 0 [unixtime] 2310 * 0 0 0 :$mysock(networkname)"
     fsend $sock "EOS"
     return 0
