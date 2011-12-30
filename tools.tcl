@@ -58,6 +58,8 @@ proc my_rehash {} {
   source controller.tcl
   puts "Chargement de la partyline."
   source pl.tcl
+  puts "Chargement du UNO"
+  source uno.tcl
   fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304Rehash effectué"
 }
 
