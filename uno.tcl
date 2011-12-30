@@ -348,6 +348,52 @@ proc UnoReset {} {
 }
 
 
+
+#
+# Read config file
+#
+proc Uno_ReadCFG {} {
+ global UnoCFGFile UnoLastMonthCards UnoLastMonthGames UnoPointsName UnoScoreFile UnoRobot UnoChan UnoFast UnoHigh UnoPlayed UnoStopAfter UnoBonus
+ global UnoRecordHigh UnoRecordFast UnoRecordCard UnoRecordWins UnoRecordPlayed UnoWildDrawTwos
+ if {[file exist $UnoCFGFile]} {
+  set f [open $UnoCFGFile r]
+  while {[gets $f s] != -1} {
+   set kkey [string tolower [lindex [split $s "="] 0]]
+   set kval [lindex [split $s "="] 1]
+   switch $kkey {
+    botname {set UnoRobot $kval}
+    channel {set UnoChan $kval}
+    points {set UnoPointsName $kval}
+    scorefile {set UnoScoreFile $kval}
+    stopafter {set UnoStopAfter $kval}
+    wilddrawtwos {set UnoWildDrawTwos $kval}
+    lastmonthcard1 {set UnoLastMonthCards(0) $kval}
+    lastmonthcard2 {set UnoLastMonthCards(1) $kval}
+    lastmonthcard3 {set UnoLastMonthCards(2) $kval}
+    lastmonthwins1 {set UnoLastMonthGames(0) $kval}
+    lastmonthwins2 {set UnoLastMonthGames(1) $kval}
+    lastmonthwins3 {set UnoLastMonthGames(2) $kval}
+    fast {set UnoFast $kval}
+    high {set UnoHigh $kval}
+    played {set UnoPlayed $kval}
+    bonus {set UnoBonus $kval}
+    recordhigh {set UnoRecordHigh $kval}
+    recordfast {set UnoRecordFast $kval}
+    recordcard {set UnoRecordCard $kval}
+    recordwins {set UnoRecordWins $kval}
+    recordplayed {set UnoRecordPlayed $kval}
+   }
+  }
+  close $f
+  if {$UnoStopAfter < 0} {set UnoStopAfter 0}
+  if {$UnoBonus < 0} {set UnoBonus 1000}
+  if {($UnoWildDrawTwos < 0)||($UnoWildDrawTwos > 1)} {set UnoWildDrawTwos 0}
+  return
+ }
+ Uno_WriteCFG
+ return
+}
+
 #
 # Write config file
 #
@@ -380,6 +426,28 @@ proc Uno_WriteCFG {} {
  close $f
  return
 }
+
+#
+# Read score file
+#
+proc UnoReadScores {} {
+ global unogameswon unoptswon UnoScoreFile UnoRobot
+ if [info exists unogameswon] { unset unogameswon }
+ if [info exists unoptswon] { unset unoptswon }
+ if ![file exists $UnoScoreFile] {
+  set f [open $UnoScoreFile w]
+  puts $f "$UnoRobot 0 0"
+  close $f
+ }
+ set f [open $UnoScoreFile r]
+ while {[gets $f s] != -1} {
+  set unogameswon([lindex [split $s] 0]) [lindex $s 1]
+  set unoptswon([lindex [split $s] 0]) [lindex $s 2]
+ }
+ close $f
+ return
+}
+
 
 # String Pad
 proc strpad {str len} {
@@ -414,6 +482,9 @@ proc unontc {who what} {
 proc unolog {who what} {
  putcmdlog "\[$who\] $what"
 }
+
+Uno_ReadCFG
+UnoReadScores
 
 ###
 ### Original bot
@@ -1894,31 +1965,6 @@ proc UnoVersion {nick uhost hand chan arg} {
 }
 
 #
-# Read score file
-#
-proc UnoReadScores {} {
- global unogameswon unoptswon UnoScoreFile UnoRobot
-
- if [info exists unogameswon] { unset unogameswon }
- if [info exists unoptswon] { unset unoptswon }
-
- if ![file exists $UnoScoreFile] {
-  set f [open $UnoScoreFile w]
-  puts $f "$UnoRobot 0 0"
-  close $f
- }
-
- set f [open $UnoScoreFile r]
- while {[gets $f s] != -1} {
-  set unogameswon([lindex [split $s] 0]) [lindex $s 1]
-  set unoptswon([lindex [split $s] 0]) [lindex $s 2]
- }
- close $f
-
- return
-}
-
-#
 # Clear top10 and write monthly scores
 #
 proc UnoNewMonth {min hour day month year} {
@@ -2145,51 +2191,6 @@ proc UnoShuffle {len} {
   lappend UnoDeck "$pcard"
   set DiscardPile [lreplace ${DiscardPile} $pcardnum $pcardnum]
  }
- return
-}
-
-#
-# Read config file
-#
-proc Uno_ReadCFG {} {
- global UnoCFGFile UnoLastMonthCards UnoLastMonthGames UnoPointsName UnoScoreFile UnoRobot UnoChan UnoFast UnoHigh UnoPlayed UnoStopAfter UnoBonus
- global UnoRecordHigh UnoRecordFast UnoRecordCard UnoRecordWins UnoRecordPlayed UnoWildDrawTwos
- if {[file exist $UnoCFGFile]} {
-  set f [open $UnoCFGFile r]
-  while {[gets $f s] != -1} {
-   set kkey [string tolower [lindex [split $s "="] 0]]
-   set kval [lindex [split $s "="] 1]
-   switch $kkey {
-    botname {set UnoRobot $kval}
-    channel {set UnoChan $kval}
-    points {set UnoPointsName $kval}
-    scorefile {set UnoScoreFile $kval}
-    stopafter {set UnoStopAfter $kval}
-    wilddrawtwos {set UnoWildDrawTwos $kval}
-    lastmonthcard1 {set UnoLastMonthCards(0) $kval}
-    lastmonthcard2 {set UnoLastMonthCards(1) $kval}
-    lastmonthcard3 {set UnoLastMonthCards(2) $kval}
-    lastmonthwins1 {set UnoLastMonthGames(0) $kval}
-    lastmonthwins2 {set UnoLastMonthGames(1) $kval}
-    lastmonthwins3 {set UnoLastMonthGames(2) $kval}
-    fast {set UnoFast $kval}
-    high {set UnoHigh $kval}
-    played {set UnoPlayed $kval}
-    bonus {set UnoBonus $kval}
-    recordhigh {set UnoRecordHigh $kval}
-    recordfast {set UnoRecordFast $kval}
-    recordcard {set UnoRecordCard $kval}
-    recordwins {set UnoRecordWins $kval}
-    recordplayed {set UnoRecordPlayed $kval}
-   }
-  }
-  close $f
-  if {$UnoStopAfter < 0} {set UnoStopAfter 0}
-  if {$UnoBonus < 0} {set UnoBonus 1000}
-  if {($UnoWildDrawTwos < 0)||($UnoWildDrawTwos > 1)} {set UnoWildDrawTwos 0}
-  return
- }
- Uno_WriteCFG
  return
 }
 
@@ -2430,8 +2431,5 @@ proc UnoLastMonthName {month} {
  }
 }
 
-Uno_ReadCFG
-
-UnoReadScores
 
 putlog "4TCL : Uno $UnoVersion par Marly (Traduction par Xor)"
