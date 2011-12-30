@@ -37,6 +37,10 @@ set mysock(users-description) "Array pour les utilisateurs présents sur un chan
 set mysock(mychans) $mysock(adminchan)
 set mysock(gamelist) ""
 
+# Varaibles for userlists
+set mysock(users-$mysock(adminchan)) ""
+foreach chan $mysock(chanlist) { set mysock(users-$chan) "" }
+
 #set mysock(sock) ""
 #set mysock(sockpl) ""
 #set mysock(server) "0"
