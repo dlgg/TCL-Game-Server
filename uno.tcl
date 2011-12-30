@@ -56,6 +56,7 @@ proc uno_control_pub { nick text } {
   global mysock
   fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PUB \002 $nick > [join $text]"
   if {[string equal -nocase "!uno" [lindex $text 0]]} { UnoInit $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!uno-reset" [lindex $text 0]]} { UnoReset }
 }
 
 proc uno_control_priv { nick text } {
