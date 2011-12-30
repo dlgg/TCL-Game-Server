@@ -76,8 +76,8 @@ proc bot_init { nick user host gecos } {
   global mysock
   fsend $mysock(sock) "TKL + Q * $nick $mysock(servername) 0 [unixtime] :Reserved for Game Server"
   fsend $mysock(sock) "NICK $nick 0 [unixtime] $user $host $mysock(servername) 0 +oSqB * * :$gecos"
-  join_chan $mysock(nick) $mysock(adminchan)
   if {$nick==$mysock(nick)} {
+    join_chan $mysock(nick) $mysock(adminchan)
     foreach chan $mysock(chanlist) {
       join_chan $mysock(nick) $chan
     }
