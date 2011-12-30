@@ -170,7 +170,7 @@ proc UnoNext {} {
  binary scan [unixtime] S1 rseed
  set newrand [expr srand($rseed)]
  while {[llength $UnoDeck] != 108} {
-  set pcardnum [rand [llength $MasterDeck]]
+  set pcardnum [expr int(rand()*[llength $MasterDeck])]
   set pcard [lindex $MasterDeck $pcardnum]
   lappend UnoDeck $pcard
   set MasterDeck [lreplace $MasterDeck $pcardnum $pcardnum]
@@ -178,10 +178,12 @@ proc UnoNext {} {
  if [info exist UnoHand] {unset UnoHand}
  if [info exist NickColor] {unset NickColor}
  unomsg "[unoad]\003 \00300,12Tapez jo pour rejoindre la partie ! Vous avez $StartGracePeriod secondes. \003"
- set UnoStartTimer [utimer $StartGracePeriod UnoStart]
+ #set UnoStartTimer [utimer $StartGracePeriod UnoStart]
+ set UnoStartTimer [after [expr {int($StartGracePeriod * 1000)}] UnoStart]
  return
 }
 
+proc UnoStart {} { unomsg "[unoad] Attente finie" }
 #
 # Reset Game Variables
 #
