@@ -60,6 +60,8 @@ proc my_rehash {} {
   source pl.tcl
   puts "Chargement du UNO"
   source uno.tcl
+  puts "Chargement du Poker"
+  source poker.tcl
   fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304Rehash effectué"
 }
 

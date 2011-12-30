@@ -11,6 +11,8 @@ source pl.tcl
 # TODO : une variable avec la liste des jeux à charger et le chargement en dynamique  selon les jeux listés
 puts "Chargement du UNO"
 source uno.tcl
+puts "Chargement du Poker"
+source poker.tcl
 
 puts "Démarrage des services."
 if {$gameserver=="1"} { socket_connect; set gameserver 2 }
