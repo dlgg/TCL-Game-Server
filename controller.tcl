@@ -37,21 +37,28 @@ proc socket_control {sock} {
     set nick [string range [lindex $arg 0] 1 end]
     set chans [join [split [lindex $arg 2] ,]]
     foreach chan $chans {
-      #if { ! [info exists mysock(users-$chan)] } { set mysock(users-$chan) "" } 
       if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
         lappend $mysock(users-$chan) $nick
+      }
+      if {[info exists mysock(join-[string tolower $chan])]} {
+        $mysock(join-[string tolower $chan]) $nick
       }
     }
   }
   #<<< @1 SJOIN 1325144112 #Poker :Yume 
   if {[lindex $arg 1]=="SJOIN"} {
     set nick [string range [lindex $arg 4] 1 end]
-    set chans [join [split [lindex $arg 2] ,]]
+    set chans [join [split [lindex $arg 3] ,]]
     foreach chan $chans {
-      #if { ! [info exists mysock(users-$chan)] } { set mysock(users-$chan) "" } 
-      lappend $mysock(users-$chan) $nick
+      if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
+        lappend $mysock(users-$chan) $nick
+      }
+      if {[info exists mysock(join-[string tolower $chan])]} {
+        $mysock(join-[string tolower $chan]) $nick
+      }
     }
   }
+
   #<<< :Yume PART #Poker
   
   # PRIVMSG
