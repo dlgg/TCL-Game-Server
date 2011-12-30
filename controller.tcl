@@ -38,7 +38,7 @@ proc socket_control {sock} {
     set chans [join [split [lindex $arg 2] ,]]
     foreach chan $chans {
       if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]]} {
-        lappend $mysock(users)($chan) $nick
+        lappend $mysock(users-$chan) $nick
       }
     }
   }
@@ -47,7 +47,7 @@ proc socket_control {sock} {
     set nick [string range [lindex $arg 4] 1 end]
     set chans [join [split [lindex $arg 2] ,]]
     foreach chan $chans {
-      lappend $mysock(users)($chan) $nick
+      lappend $mysock(users-$chan) $nick
     }
   }
   #<<< :Yume PART #Poker
