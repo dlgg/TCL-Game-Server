@@ -125,8 +125,9 @@ proc socket_control {sock} {
       if {[string equal -nocase "$mysock(cmdchar)deop"    [lindex $comm 0]]} { fsend $mysock(sock) ":$mysock(nick) MODE $to -o $from" }
       if {[string equal -nocase "$mysock(cmdchar)voice"   [lindex $comm 0]]} { fsend $mysock(sock) ":$mysock(nick) MODE $to +v $from" }
       if {[string equal -nocase "$mysock(cmdchar)devoice" [lindex $comm 0]]} { fsend $mysock(sock) ":$mysock(nick) MODE $to -v $from" }
-      if {[string equal -nocase "$mysock(cmdchar)touche"  [lindex $comm 0]]} { fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :$from glisse sa main dans le string de [lindex $comm 1] et la caresse" }
-      if {[string equal -nocase "$mysock(cmdchar)pipe"    [lindex $comm 0]]} { fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :$from prend le sexe de [lindex $comm 1] en bouche et le suce" }
+      if {[string equal -nocase "$mysock(cmdchar)touche"  [lindex $comm 0]]} { fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :\002$from\002 glisse sa main dans le string de \002[lindex $comm 1]\002 et la caresse." }
+      if {[string equal -nocase "$mysock(cmdchar)pipe"    [lindex $comm 0]]} { fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :\002$from\002 prend le sexe de \002[lindex $comm 1]\002 en bouche et le suce." }
+      if {[string equal -nocase "$mysock(cmdchar)cuni"    [lindex $comm 0]]} { fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :\002$from\002 retire le shorty de \002[lindex $comm 1]\002 et viens jouer avec sa langue entre ses lèvres." }
     }
     return 0
   }
