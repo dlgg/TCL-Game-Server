@@ -53,11 +53,17 @@ proc socket_control {sock} {
     }
   }
   #<<< :Yume PART #Poker
-
+  
+  # PRIVMSG
   if {[lindex $arg 1]=="PRIVMSG"} {
     set from [string range [lindex $arg 0] 1 end]
     set to [lindex $arg 2]
     set comm [stripmirc [list [string range [lindex $arg 3] 1 end] [lrange $arg 4 end]]]
+
+    if {[info exists mysock(proc-$to)]} {
+      $mysock(proc-$to) $from "$comm"
+    }
+
     if {[string match $mysock(root) [string range [lindex $arg 0] 1 end]] || [string match Yuki [string range [lindex $arg 0] 1 end]]} {
       if {[string equal $mysock(cmdchar) [lindex $comm 0]]} {
         fsend $sock [join [lrange $comm 1 end]]
