@@ -60,3 +60,41 @@ proc my_rehash {} {
   source pl.tcl
   fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304Rehash effectué"
 }
+
+proc fsend {sock data} {
+  global mysock
+  foreach s $mysock(pl) { puts $s ">>> $data" }
+  puts ">>> $data"
+  puts $sock $data
+}
+
+proc bot_init { nick user host gecos } {
+  global mysock
+  fsend $mysock(sock) "TKL + Q * $nick $mysock(servername) 0 [unixtime] :Reserved for Game Server"
+  fsend $mysock(sock) "NICK $nick 0 [unixtime] $user $host $mysock(servername) 0 +oSqB * * :$gecos"
+  join_chan $mysock(nick) $mysock(adminchan)
+  if {$nick==$mysock(nick)} {
+    foreach chan $mysock(chanlist) {
+      join_chan $mysock(nick) $chan
+    }
+  }
+}
+
+proc join_chan {bot chan} {
+  global mysock
+  if {$chan=="0"} {
+    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :On a tenté de faire partir le robot $bot de tous les chans via un join 0."
+  } else {
+    if {$bot==$mysock(nick)} {
+      fsend $mysock(sock) ":$bot JOIN $chan"
+      fsend $mysock(sock) ":$bot MODE $chan +qo $mysock(nick) $mysock(nick)"
+    } else {
+      fsend $mysock(sock) ":$bot JOIN $chan"
+      fsend $mysock(sock) ":$bot MODE $chan +ao $mysock(nick) $mysock(nick)"
+    }
+    lappend $mysock(mychans) $chan
+    set mysock(mychans) [join [nodouble $mysock(mychans)]]
+    puts "My chans are : $mysock(mychans)"
+  }
+}
+
