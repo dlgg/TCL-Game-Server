@@ -68,7 +68,7 @@ proc my_rehash {} {
 proc fsend {sock data} {
   global mysock
   foreach s $mysock(pl) { puts $s ">>> $data" }
-  puts ">>> $data"
+  puts ">>> [stripmirc $data]"
   puts $sock $data
 }
 
