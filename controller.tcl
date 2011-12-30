@@ -37,7 +37,8 @@ proc socket_control {sock} {
     set nick [string range [lindex $arg 0] 1 end]
     set chans [join [split [lindex $arg 2] ,]]
     foreach chan $chans {
-      if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]]} {
+      #if { ! [info exists mysock(users-$chan)] } { set mysock(users-$chan) "" } 
+      if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
         lappend $mysock(users-$chan) $nick
       }
     }
@@ -47,6 +48,7 @@ proc socket_control {sock} {
     set nick [string range [lindex $arg 4] 1 end]
     set chans [join [split [lindex $arg 2] ,]]
     foreach chan $chans {
+      #if { ! [info exists mysock(users-$chan)] } { set mysock(users-$chan) "" } 
       lappend $mysock(users-$chan) $nick
     }
   }
