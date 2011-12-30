@@ -77,11 +77,11 @@ proc socket_control {sock} {
       if {[string equal -nocase "$mysock(cmdchar)test" [lindex $comm 0]]} {
         fsend $sock ":$mysock(nick) PRIVMSG $from :Test OK !"
       }
-      if {[string equal -nocase "!pl" [lindex $comm 0]]} {
-        set long [exec ~/ip2long "$mysock(plip)"];
-        fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :Long ip : $long"
-        fsend $mysock(sock) ":$mysock(nick) PRIVMSG $from :\001DCC CHAT chat $long $mysock(plport)\001"
-      }
+#      if {[string equal -nocase "!pl" [lindex $comm 0]]} {
+#        set long [exec ~/ip2long "$mysock(plip)"];
+#        fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :Long ip : $long"
+#        fsend $mysock(sock) ":$mysock(nick) PRIVMSG $from :\001DCC CHAT chat $long $mysock(plport)\001"
+#      }
       # Commande !join #chan
       if {[string equal -nocase "$mysock(cmdchar)join" [lindex $comm 0]]} {
         foreach chan [lrange $comm 1 end] {
