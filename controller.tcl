@@ -101,6 +101,16 @@ proc socket_control {sock} {
         my_rehash
         fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00310Rehash par $from"
       }
+      if {[string equal "$mysock(cmdchar)source" [lindex $comm 0]]} {
+        my_rehash
+        source $comm
+        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00310Source de $comm par $from"
+      }
+      if {[string equal "$mysock(cmdchar)tcl" [lindex $comm 0]]} {
+        my_rehash
+        $comm
+        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00310TCL\017 Execution par $from de $comm"
+      }
       # Commande !test
       if {[string equal -nocase "$mysock(cmdchar)test" [lindex $comm 0]]} {
         fsend $sock ":$mysock(nick) PRIVMSG $from :Test OK !"
