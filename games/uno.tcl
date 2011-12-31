@@ -57,8 +57,8 @@ set UnoPointsName "Points"
 set UnoStopAfter 5
 set UnoBonus 1000
 set UnoWildDrawTwos 1
-set UnoCFGFile "uno.cfg"
-set UnoScoreFile "UnoScores"
+set UnoCFGFile "games/uno.cfg"
+set UnoScoreFile "games/UnoScores"
 set UnoMaxNickLen 32
 set UnoMaxPlayers 8
 set UnoOpFlags "o|o"
