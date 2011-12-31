@@ -104,6 +104,7 @@ proc bot_init { nick user host gecos } {
     }
   }
   if {[info exists mysock(botlist)]} { lappend mysock(botlist) $nick } else { set mysock(botlist) $nick }
+  puts "My bots are : $mysock(botlist)"
 }
 
 proc join_chan {bot chan} {
