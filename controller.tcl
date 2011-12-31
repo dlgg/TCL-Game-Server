@@ -131,6 +131,10 @@ proc socket_control {sock} {
       }
       # Commande !die
       if {[string equal -nocase "$mysock(cmdchar)die" [lindex $comm 0]]} {
+        foreach bot $mysock(botlist) {
+          fsend $mysock(sock) ":$mysock(nick) QUIT :Coupure des services demandée par $from. "
+        }
+        fsend $mysock(sock) "SQUIT $mysock(hub)"
         exit 0
       }
 #      # Commande !restart

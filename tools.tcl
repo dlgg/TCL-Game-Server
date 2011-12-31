@@ -103,6 +103,7 @@ proc bot_init { nick user host gecos } {
       join_chan $mysock(nick) $chan
     }
   }
+  if {[info exists mysock(botlist)]} { lappend mysock(botlist) $nick } else { set mysock(botlist) $nick }
 }
 
 proc join_chan {bot chan} {
@@ -131,5 +132,4 @@ proc game_init {} {
     join_chan $mysock($game-nick) $mysock($game-chan)
   }
 }
-
 
