@@ -78,6 +78,19 @@ proc uno_control_pub { nick text } {
   fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PUB \002 $nick > [join $text]"
   if {[string equal -nocase "!uno-reset" [lindex $text 0]]} { UnoReset; set UnoOn 0 }
   if {[string equal -nocase "!uno" [lindex $text 0]]} { UnoInit $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unocmds" [lindex $text 0]]} { UnoCmds $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!remove" [lindex $text 0]]} { UnoRemove $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!pause" [lindex $text 0]]} { UnoPause $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unowon" [lindex $text 0]]} { UnoWon $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unotop10" [lindex $text 0]]} { UnoTopTen $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unotop10won" [lindex $text 0]]} { UnoTopTenWon $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unotop3last" [lindex $text 0]]} { UnoTopThreeLast $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unofast" [lindex $text 0]]} { UnoTopFast $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unohigh" [lindex $text 0]]} { UnoHighScore $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unoplayed" [lindex $text 0]]} { UnoPlayed $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unorecords" [lindex $text 0]]} { UnoRecords $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!unoversion" [lindex $text 0]]} { UnoVersion $nick "none" "-" $mysock(uno-chan) "$text" }
+  if {[string equal -nocase "!stop" [lindex $text 0]]} { UnoStop $nick "none" "-" $mysock(uno-chan) "$text" }
   if { $UnoOn != 0 } {
     if {[string equal -nocase "join" [lindex $text 0]]} { JoinUno $nick "none" "-" $mysock(uno-chan) "$text" }
     if {[string equal -nocase "jo" [lindex $text 0]]} { JoinUno $nick "none" "-" $mysock(uno-chan) "$text" }
@@ -351,6 +364,50 @@ proc UnoCycle {} {
 }
 
 #
+# Add a player
+#
+proc JoinUno {nick uhost hand chan arg} {
+  global Debug UnoIDX UnoMode UnoPlayers RoundRobin UnoDeck UnoHand UnoChan NickColor UnoMaxPlayers
+  global mysock
+  if {($chan != $UnoChan)||($UnoMode < 1)||($UnoMode > 2)} {return}
+  if {[llength $RoundRobin] == $UnoMaxPlayers} {
+    unontc $nick "Désolé $nick, le nombre maximum de joueurs est déjà atteint !"
+    return
+  }
+  set pcount 0
+  while {[lindex $RoundRobin $pcount] != ""} {
+    if {[lindex $RoundRobin $pcount] == $nick} {
+      return
+    }
+    incr pcount
+  }
+  incr UnoPlayers
+  lappend RoundRobin $nick
+  lappend UnoIDX $nick
+  if [info exist UnoHand($nick)] {unset UnoHand($nick)}
+  if [info exist NickColor($nick)] {unset NickColor($nick)}
+  set UnoHand($nick) ""
+  set NickColor($nick) [colornick $UnoPlayers]
+  # Re-Shuffle Deck
+  UnoShuffle 7
+  # Deal Cards To Player
+  set Card ""
+  while {[llength $UnoHand($nick)] != 7} {
+    set pcardnum [rand [llength $UnoDeck]]
+    set pcard [lindex $UnoDeck $pcardnum]
+    set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
+    lappend UnoHand($nick) $pcard
+    append Card [CardColor $pcard]
+  }
+  if {$Debug > 1} { unolog $nick $UnoHand($nick) }
+  unomsg "[nikclr $nick]\003 rejoint la partie [unoad]\003"
+  puts "UNO : $nick rejoint la partie."
+  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO : \00302$nick\017 rejoint la partie."
+  unontc $nick "En main : $Card"
+  return
+}
+
+#
 # Reset Game Variables
 #
 proc UnoReset {} {
@@ -387,6 +444,220 @@ proc UnoReset {} {
   set UnoCycleTimer ""
 
   return
+}
+
+#
+# Add card(s) to players hand
+#
+proc UnoAddDrawToHand {cplayer idx num} {
+  global UnoHand UnoDeck RoundRobin CardStats mysock
+  # Check if deck needs reshuffling
+  UnoShuffle $num
+  set Card ""
+  set newhand [expr [llength $UnoHand($cplayer)] + $num]
+  while {[llength $UnoHand($cplayer)] != $newhand} {
+    set pcardnum [rand [llength $UnoDeck]]
+    set pcard [lindex $UnoDeck $pcardnum]
+    set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
+    lappend UnoHand($cplayer) $pcard
+    append Card [CardColor $pcard]
+  }
+  showdraw $idx $Card
+  incr CardStats(drawn) $num
+}
+
+#
+# Remove played card from player's hand
+#
+proc UnoRemoveCardFromHand {cplayer pcard} {
+  global UnoHand
+  set UnoHand($cplayer) [lreplace $UnoHand($cplayer) $pcard $pcard]
+}
+
+#
+# Add card to discard pile
+#
+proc AddToDiscardPile {playcard} {
+  global DiscardPile
+  if {[string range $playcard 1 1] != ""} {
+    lappend DiscardPile $playcard
+  }
+}
+
+#
+# Draw a card
+#
+proc UnoDraw {nick uhost hand chan arg} {
+  global UnoChan UnoMode UnoDeck ThisPlayer ThisPlayerIDX UnoHand RoundRobin IsDraw CardStats
+  if {($chan != $UnoChan)||($UnoMode != 2)||($nick != $ThisPlayer)} {return}
+  if {$IsDraw == 0} {
+    set IsDraw 1
+    UnoShuffle 1
+    set dcardnum [rand [llength $UnoDeck]]
+    set dcard [lindex $UnoDeck $dcardnum]
+    lappend UnoHand($nick) $dcard
+    set UnoDeck [lreplace ${UnoDeck} $dcardnum $dcardnum]
+    append Card [CardColor $dcard]
+    showdraw $ThisPlayerIDX $Card
+    showwhodrew $nick
+    incr CardStats(drawn)
+    UnoAutoSkipReset
+    return
+  }
+  unontc $nick "Vous avez déjà pioché une carte, jouez-la (pl) ou passez (pa)."
+  UnoAutoSkipReset
+  return
+}
+
+#
+# Pass a turn
+#
+proc UnoPass {nick uhost hand chan arg} {
+  global UnoChan UnoMode ThisPlayer IsDraw ThisPlayerIDX RoundRobin IsColorChange CardStats
+  if {($chan != $UnoChan)||($UnoMode != 2)} {return}
+  if {($nick != $ThisPlayer)||($IsColorChange == 1)} {return}
+  UnoAutoSkipReset
+  if {$IsDraw == 1} {
+    incr CardStats(passed)
+    set IsDraw 0
+    UnoNextPlayer
+    playpass $nick $ThisPlayer
+    set Card [CardColorAll $ThisPlayer]
+    showcards $ThisPlayerIDX $Card
+    UnoRobotRestart
+  } {
+    unontc $nick "Désolé $nick, vous ne pouvez pas passer sans avoir pioché (dr) auparavant."
+  }
+  return
+}
+
+#
+# Color change
+#
+proc UnoColorChange {nick uhost hand chan arg} {
+  global UnoChan UnoMode IsDraw PlayCard ColorPicker IsColorChange ThisPlayer ThisPlayerIDX RoundRobin
+  if {($chan != $UnoChan)||($UnoMode != 2)} {return}
+  if {($nick != $ColorPicker)||($IsColorChange == 0)} {return}
+  UnoAutoSkipReset
+  regsub -all \[`.,!{}] $arg "" arg
+  set NewColor [string toupper [string range $arg 0 0]]
+  switch $NewColor {
+    "B" { set PlayCard "B"; set Card " \00300,12 Blue \003 "}
+    "G" { set PlayCard "G"; set Card " \00300,03 Green \003 "}
+    "Y" { set PlayCard "Y"; set Card " \00301,08 Yellow \003 "}
+    "R" { set PlayCard "R"; set Card " \00300,04 Red \003 "}
+    default { unontc $nick "Choisissez une couleur valide : \002R\002ed, \002G\002reen, \002B\002lue, ou \002Y\002ellow"; return }
+  }
+  UnoNextPlayer
+  unomsg "[nikclr $ColorPicker]\003 a choisi $Card. Le jeu continue avec [nikclr $ThisPlayer].\003"
+  set Card [CardColorAll $ThisPlayer]
+  showcards $ThisPlayerIDX $Card
+  set ColorPicker ""
+  set IsColorChange 0
+  set IsDraw 0
+  UnoRobotRestart
+  return
+}
+
+#
+# Skip card
+#
+proc PlayUnoSkipCard {nick pickednum crd} {
+  global IsDraw ThisPlayer ThisPlayerIDX PlayCard RoundRobin CardStats
+  set c0 [string range $crd 0 0]
+  set c1 [string range $crd 1 1]
+  set cip0 [string range $PlayCard 0 0]
+  set cip1 [string range $PlayCard 1 1]
+  if {$c1 != "S"} {return 0}
+  if {($c0 != $cip0)&&($c1 != $cip1)} {return 0}
+  incr CardStats(played)
+  incr CardStats(skips)
+  AddToDiscardPile $PlayCard
+  UnoRemoveCardFromHand $nick $pickednum
+  set PlayCard $crd
+  set Card [CardColor $crd]
+  set SkipPlayer $ThisPlayer
+  UnoNextPlayer
+  set SkippedPlayer [lindex $RoundRobin $ThisPlayerIDX]
+  UnoNextPlayer
+  # No Cards Left = Winner
+  if {[check_unowin $SkipPlayer $Card] > 0} {
+    showwin $SkipPlayer $Card
+    UnoWin $SkipPlayer
+    UnoCycle
+    return 1
+  }
+  playskip $nick $Card $SkippedPlayer $ThisPlayer
+  check_hasuno $SkipPlayer
+  set Card [CardColorAll $ThisPlayer]
+  showcards $ThisPlayerIDX $Card
+  set IsDraw 0
+  return 1
+}
+
+#
+# Reverse card
+#
+proc PlayUnoReverseCard {nick pickednum crd} {
+  global IsDraw UnoIDX ThisPlayer ThisPlayerIDX PlayCard RoundRobin CardStats
+  set c0 [string range $crd 0 0]
+  set c1 [string range $crd 1 1]
+  set cip0 [string range $PlayCard 0 0]
+  set cip1 [string range $PlayCard 1 1]
+  if {$c1 != "R"} {return 0}
+  if {($c0 != $cip0)&&($c1 != $cip1)} {return 0}
+  incr CardStats(played)
+  incr CardStats(revs)
+  AddToDiscardPile $PlayCard
+  UnoRemoveCardFromHand $nick $pickednum
+  set PlayCard $crd
+  set Card [CardColor $crd]
+  # Reverse RoundRobin and Move To Next Player
+  set NewRoundRobin ""
+  set OrigOrderLength [llength $RoundRobin]
+  set IDX $OrigOrderLength
+  while {$OrigOrderLength != [llength $NewRoundRobin]} {
+    set IDX [expr ($IDX - 1)]
+    lappend NewRoundRobin [lindex $RoundRobin $IDX]
+  }
+  set Newindexorder ""
+  set OrigindexLength [llength $UnoIDX]
+  set IDX $OrigindexLength
+  while {$OrigindexLength != [llength $Newindexorder]} {
+    set IDX [expr ($IDX - 1)]
+    lappend Newindexorder [lindex $UnoIDX $IDX]
+  }
+  set UnoIDX $Newindexorder
+  set RoundRobin $NewRoundRobin
+  set ReversePlayer $ThisPlayer
+  # Next Player After Reversing RoundRobin
+  set pcount 0
+  while {$pcount != [llength $RoundRobin]} {
+    if {[lindex $RoundRobin $pcount] == $ThisPlayer} {
+      set ThisPlayerIDX $pcount
+      break
+    }
+    incr pcount
+  }
+  # <3 Players Act Like A Skip Card
+  if {[llength $RoundRobin] > 2} {
+    incr ThisPlayerIDX
+    if {$ThisPlayerIDX >= [llength $RoundRobin]} {set ThisPlayerIDX 0}
+  }
+  set ThisPlayer [lindex $RoundRobin $ThisPlayerIDX]
+  # No Cards Left = Winner
+  if {[check_unowin $ReversePlayer $Card] > 0} {
+    showwin $ReversePlayer $Card
+    UnoWin $ReversePlayer
+    UnoCycle
+    return 1
+  }
+  playcard $nick $Card $ThisPlayer
+  check_hasuno $ReversePlayer
+  set Card [CardColorAll $ThisPlayer]
+  showcards $ThisPlayerIDX $Card
+  set IsDraw 0
+  return 1
 }
 
 #
@@ -534,355 +805,8 @@ return 0
 ### MARK
 ###
 
-# Command Binds
-bind pub - !unocmds UnoCmds
-bind pub - !remove UnoRemove
-bind pub - !pause UnoPause
-bind pub - !unowon UnoWon
-bind pub - !unotop10 UnoTopTen
-bind pub - !unotop10won UnoTopTenWon
-bind pub - !unotop3last UnoTopThreeLast
-bind pub - !unofast UnoTopFast
-bind pub - !unohigh UnoHighScore
-bind pub - !unoplayed UnoPlayed
-bind pub - !unorecords UnoRecords
-bind pub - !unoversion UnoVersion
-bind pub - !uno UnoInit
-bind pub - !stop UnoStop
-
 # Cron Bind For Score Reset
-bind time - "00 00 01 * *" UnoNewMonth
-
-
-#
-# Bind Channel Commands
-#
-
-
-#
-# Add a player
-#
-proc JoinUno {nick uhost hand chan arg} {
-  global Debug UnoIDX UnoMode UnoPlayers RoundRobin UnoDeck UnoHand UnoChan NickColor UnoMaxPlayers
-  if {($chan != $UnoChan)||($UnoMode < 1)||($UnoMode > 2)} {return}
-  if {[llength $RoundRobin] == $UnoMaxPlayers} {
-    unontc $nick "Désolé $nick, le nombre maximum de joueurs est déjà atteint !"
-    return
-  }
-  set pcount 0
-  while {[lindex $RoundRobin $pcount] != ""} {
-    if {[lindex $RoundRobin $pcount] == $nick} {
-      return
-    }
-    incr pcount
-  }
-  incr UnoPlayers
-  lappend RoundRobin $nick
-  lappend UnoIDX $nick
-  if [info exist UnoHand($nick)] {unset UnoHand($nick)}
-  if [info exist NickColor($nick)] {unset NickColor($nick)}
-  set UnoHand($nick) ""
-  set NickColor($nick) [colornick $UnoPlayers]
-  # Re-Shuffle Deck
-  UnoShuffle 7
-  # Deal Cards To Player
-  set Card ""
-  while {[llength $UnoHand($nick)] != 7} {
-    set pcardnum [rand [llength $UnoDeck]]
-    set pcard [lindex $UnoDeck $pcardnum]
-    set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
-    lappend UnoHand($nick) $pcard
-    append Card [CardColor $pcard]
-  }
-  if {$Debug > 1} { unolog $nick $UnoHand($nick) }
-  unomsg "[nikclr $nick]\003 rejoint la partie [unoad]\003"
-  putlog "4UNO : 2$nick rejoint la partie."
-  unontc $nick "En main : $Card"
-  return
-}
-
-#
-# Add card(s) to players hand
-#
-proc UnoAddDrawToHand {cplayer idx num} {
- global UnoHand UnoDeck RoundRobin CardStats
-
- # Check if deck needs reshuffling
- UnoShuffle $num
-
- set Card ""
-
- set newhand [expr [llength $UnoHand($cplayer)] + $num]
-
- while {[llength $UnoHand($cplayer)] != $newhand} {
-  set pcardnum [rand [llength $UnoDeck]]
-  set pcard [lindex $UnoDeck $pcardnum]
-  set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
-  lappend UnoHand($cplayer) $pcard
-  append Card [CardColor $pcard]
- }
-
- showdraw $idx $Card
-
- incr CardStats(drawn) $num
-}
-
-#
-# Remove played card from player's hand
-#
-proc UnoRemoveCardFromHand {cplayer pcard} {
- global UnoHand
- set UnoHand($cplayer) [lreplace $UnoHand($cplayer) $pcard $pcard]
-}
-
-#
-# Add card to discard pile
-#
-proc AddToDiscardPile {playcard} {
- global DiscardPile
- if {[string range $playcard 1 1] != ""} {
-  lappend DiscardPile $playcard
- }
-}
-
-#
-# Draw a card
-#
-proc UnoDraw {nick uhost hand chan arg} {
- global UnoChan UnoMode UnoDeck ThisPlayer ThisPlayerIDX UnoHand RoundRobin IsDraw CardStats
-
- if {($chan != $UnoChan)||($UnoMode != 2)||($nick != $ThisPlayer)} {return}
-
- if {$IsDraw == 0} {
-  set IsDraw 1
-  UnoShuffle 1
-
-  set dcardnum [rand [llength $UnoDeck]]
-  set dcard [lindex $UnoDeck $dcardnum]
-  lappend UnoHand($nick) $dcard
-  set UnoDeck [lreplace ${UnoDeck} $dcardnum $dcardnum]
-
-  append Card [CardColor $dcard]
-
-  showdraw $ThisPlayerIDX $Card
-
-  showwhodrew $nick
-  incr CardStats(drawn)
-  UnoAutoSkipReset
-
-  return
- }
-
- unontc $nick "Vous avez déjà pioché une carte, jouez-la (pl) ou passez (pa)."
-
- UnoAutoSkipReset
-
- return
-}
-
-#
-# Pass a turn
-#
-proc UnoPass {nick uhost hand chan arg} {
- global UnoChan UnoMode ThisPlayer IsDraw ThisPlayerIDX RoundRobin IsColorChange CardStats
-
- if {($chan != $UnoChan)||($UnoMode != 2)} {return}
- if {($nick != $ThisPlayer)||($IsColorChange == 1)} {return}
-
- UnoAutoSkipReset
-
- if {$IsDraw == 1} {
-  incr CardStats(passed)
-  set IsDraw 0
-  UnoNextPlayer
-  playpass $nick $ThisPlayer
-  set Card [CardColorAll $ThisPlayer]
-  showcards $ThisPlayerIDX $Card
-  UnoRobotRestart
- } {
-  unontc $nick "Désolé $nick, vous ne pouvez pas passer sans avoir pioché (dr) auparavant."
- }
- return
-}
-
-#
-# Color change
-#
-proc UnoColorChange {nick uhost hand chan arg} {
- global UnoChan UnoMode IsDraw PlayCard ColorPicker IsColorChange ThisPlayer ThisPlayerIDX RoundRobin
-
- if {($chan != $UnoChan)||($UnoMode != 2)} {return}
- if {($nick != $ColorPicker)||($IsColorChange == 0)} {return}
-
- UnoAutoSkipReset
-
- regsub -all \[`.,!{}] $arg "" arg
-
- set NewColor [string toupper [string range $arg 0 0]]
-
- switch $NewColor {
-  "B" { set PlayCard "B"; set Card " \0030,12 Blue \003 "}
-  "G" { set PlayCard "G"; set Card " \0030,3 Green \003 "}
-  "Y" { set PlayCard "Y"; set Card " \0031,8 Yellow \003 "}
-  "R" { set PlayCard "R"; set Card " \0030,4 Red \003 "}
-  default { unontc $nick "Choisissez une couleur valide : Red, Green, Blue, ou Yellow"; return }
- }
-
- UnoNextPlayer
-
- unomsg "[nikclr $ColorPicker]\003 a choisi $Card. Le jeu continue avec [nikclr $ThisPlayer].\003"
-
- set Card [CardColorAll $ThisPlayer]
- showcards $ThisPlayerIDX $Card
-
- set ColorPicker ""
- set IsColorChange 0
- set IsDraw 0
-
- UnoRobotRestart
-
- return
-}
-
-#
-# Skip card
-#
-proc PlayUnoSkipCard {nick pickednum crd} {
- global IsDraw ThisPlayer ThisPlayerIDX PlayCard RoundRobin CardStats
-
- set c0 [string range $crd 0 0]
- set c1 [string range $crd 1 1]
- set cip0 [string range $PlayCard 0 0]
- set cip1 [string range $PlayCard 1 1]
-
- if {$c1 != "S"} {return 0}
-
- if {($c0 != $cip0)&&($c1 != $cip1)} {return 0}
-
- incr CardStats(played)
- incr CardStats(skips)
-
- AddToDiscardPile $PlayCard
-
- UnoRemoveCardFromHand $nick $pickednum
-
- set PlayCard $crd
- set Card [CardColor $crd]
-
- set SkipPlayer $ThisPlayer
-
- UnoNextPlayer
-
- set SkippedPlayer [lindex $RoundRobin $ThisPlayerIDX]
-
- UnoNextPlayer
-
- # No Cards Left = Winner
- if {[check_unowin $SkipPlayer $Card] > 0} {
-  showwin $SkipPlayer $Card
-  UnoWin $SkipPlayer
-  UnoCycle
-  return 1
- }
-
- playskip $nick $Card $SkippedPlayer $ThisPlayer
-
- check_hasuno $SkipPlayer
-
- set Card [CardColorAll $ThisPlayer]
- showcards $ThisPlayerIDX $Card
-
- set IsDraw 0
- return 1
-}
-
-#
-# Reverse card
-#
-proc PlayUnoReverseCard {nick pickednum crd} {
- global IsDraw UnoIDX ThisPlayer ThisPlayerIDX PlayCard RoundRobin CardStats
-
- set c0 [string range $crd 0 0]
- set c1 [string range $crd 1 1]
- set cip0 [string range $PlayCard 0 0]
- set cip1 [string range $PlayCard 1 1]
-
- if {$c1 != "R"} {return 0}
-
- if {($c0 != $cip0)&&($c1 != $cip1)} {return 0}
-
- incr CardStats(played)
- incr CardStats(revs)
-
- AddToDiscardPile $PlayCard
-
- UnoRemoveCardFromHand $nick $pickednum
-
- set PlayCard $crd
- set Card [CardColor $crd]
-
- # Reverse RoundRobin and Move To Next Player
- set NewRoundRobin ""
- set OrigOrderLength [llength $RoundRobin]
- set IDX $OrigOrderLength
-
- while {$OrigOrderLength != [llength $NewRoundRobin]} {
-  set IDX [expr ($IDX - 1)]
-  lappend NewRoundRobin [lindex $RoundRobin $IDX]
- }
-
- set Newindexorder ""
- set OrigindexLength [llength $UnoIDX]
- set IDX $OrigindexLength
-
- while {$OrigindexLength != [llength $Newindexorder]} {
-  set IDX [expr ($IDX - 1)]
-  lappend Newindexorder [lindex $UnoIDX $IDX]
- }
-
- set UnoIDX $Newindexorder
- set RoundRobin $NewRoundRobin
-
- set ReversePlayer $ThisPlayer
-
- # Next Player After Reversing RoundRobin
-
- set pcount 0
- while {$pcount != [llength $RoundRobin]} {
-  if {[lindex $RoundRobin $pcount] == $ThisPlayer} {
-   set ThisPlayerIDX $pcount
-   break
-  }
-  incr pcount
- }
-
- # <3 Players Act Like A Skip Card
-
- if {[llength $RoundRobin] > 2} {
-  incr ThisPlayerIDX
-  if {$ThisPlayerIDX >= [llength $RoundRobin]} {set ThisPlayerIDX 0}
- }
-
- set ThisPlayer [lindex $RoundRobin $ThisPlayerIDX]
-
- # No Cards Left = Winner
- if {[check_unowin $ReversePlayer $Card] > 0} {
-  showwin $ReversePlayer $Card
-  UnoWin $ReversePlayer
-  UnoCycle
-  return 1
- }
-
- playcard $nick $Card $ThisPlayer
-
- check_hasuno $ReversePlayer
-
- set Card [CardColorAll $ThisPlayer]
- showcards $ThisPlayerIDX $Card
-
- set IsDraw 0
- return 1
-}
+#bind time - "00 00 01 * *" UnoNewMonth
 
 #
 # Draw Two card
