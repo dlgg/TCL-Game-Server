@@ -55,11 +55,14 @@ proc duration {s} {
   set seconds [expr {$s % 60}]
   set res ""
   if {$days != 0} {append res "$days jours"}
-  if {$hours != 0} {append res "$hours heures"}        
+  if {$hours != 0} {append res "$hours heures"}
   if {$minutes != 0} {append res " $minutes minutes"}
   if {$seconds != 0} {append res " $seconds secondes"}
   return $res
-} 
+}
+proc rand {l} {
+  return [expr {int(rand()*$l)}]
+}
 
 # Gestion complémentaire de listes
 proc lremove { list element } {
