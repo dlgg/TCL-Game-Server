@@ -47,6 +47,20 @@ proc unixtime {} {return [exec date +%s]}
 proc test { a b } { return [string equal -nocase $a $b] }
 proc testcs { a b } { return [string equal $a $b] }
 
+# Eggdrop tcl command
+proc duration {s} {
+  set days [expr {$s / 86400}]
+  set hours [expr {$s / 3600}]
+  set minutes [expr {($s / 60) % 60}]
+  set seconds [expr {$s % 60}]
+  set res ""
+  if {$days != 0} {append res "$days jours"}
+  if {$hours != 0} {append res "$hours heures"}        
+  if {$minutes != 0} {append res " $minutes minutes"}
+  if {$seconds != 0} {append res " $seconds secondes"}
+  return $res
+} 
+
 # Gestion complémentaire de listes
 proc lremove { list element } {
   set final ""
