@@ -61,7 +61,6 @@ set UnoCFGFile "games/uno.cfg"
 set UnoScoreFile "games/UnoScores"
 set UnoMaxNickLen 32
 set UnoMaxPlayers 8
-set UnoOpFlags "o|o"
 set UnoNTC "NOTICE"
 
 # Don't modify this
@@ -1693,14 +1692,12 @@ proc hasuno {who} { global UnoChan mysock; fsend $mysock(sock) ":$mysock(uno-nic
 #
 
 # Check if a timer exists
-#proc unotimerexists {cmd} {
-#  foreach i [timers] {
-#    if {![string compare $cmd [lindex $i 1]]} then {
-#       return [lindex $i 2]
-#    }
-#  }
-#  return
-#}
+proc unotimerexists {cmd} {
+  set ret [after info $cmd]
+  puts ret 
+  if {[string match -nocase -- $cmd [info procs [lindex $ret 0]]]} { return 1 }
+  return
+}
 
 # Sort Scores
 proc UnoSortScores {s1 s2} {
@@ -1811,114 +1808,114 @@ return 0
 # Autoskip inactive players
 #
 proc UnoAutoSkip {} {
- global UnoMode ThisPlayer ThisPlayerIDX RoundRobin AutoSkipPeriod IsColorChange ColorPicker
- global UnoIDX UnoPlayers UnoDeck UnoHand UnoChan UnoSkipTimer Debug NickColor UnoPaused
- if {$UnoMode != 2} {return}
- if {$UnoPaused != 0} {return}
- if {[uno_isrobot $ThisPlayerIDX]} {return}
- set Idler $ThisPlayer
- set IdlerIDX $ThisPlayerIDX
- if {[unotimerexists UnoAutoSkip] != ""} {
-  unolog "uno" "AutoSkip Timer existe déjà"
-  return
- }
- set InChannel 0
- set uclist [chanlist $UnoChan]
- set pcount 0
- while {[lindex $uclist $pcount] != ""} {
-  if {[lindex $uclist $pcount] == $Idler} {
-   set InChannel 1
-   break
+  global UnoMode ThisPlayer ThisPlayerIDX RoundRobin AutoSkipPeriod IsColorChange ColorPicker
+  global UnoIDX UnoPlayers UnoDeck UnoHand UnoChan UnoSkipTimer Debug NickColor UnoPaused
+  if {$UnoMode != 2} {return}
+  if {$UnoPaused != 0} {return}
+  if {[uno_isrobot $ThisPlayerIDX]} {return}
+  set Idler $ThisPlayer
+  set IdlerIDX $ThisPlayerIDX
+  if {[unotimerexists UnoSkipTimer] != ""} {
+    unolog "uno" "AutoSkip Timer existe déjà"
+    return
   }
-  incr pcount
- }
- if {$InChannel == 0} {
-  unomsg "[nikclr $Idler]\003 a quitté le salon, et est retiré de la partie.\003"
+  set InChannel 0
+  set uclist [chanlist $UnoChan]
+  set pcount 0
+  while {[lindex $uclist $pcount] != ""} {
+    if {[lindex $uclist $pcount] == $Idler} {
+      set InChannel 1
+      break
+    }
+    incr pcount
+  }
+  if {$InChannel == 0} {
+    unomsg "[nikclr $Idler]\003 a quitté le salon, et est retiré de la partie.\003"
+    if {$IsColorChange == 1} {
+      if {$Idler == $ColorPicker} {
+        # Make A Color Choice
+        set cip [UnoPickAColor]
+        unomsg "\00300,13 $Idler \003devait choisir une couleur : sélection aléatoire de $cip. \003"
+        set IsColorChange 0
+      } {
+        unolog "uno" "UnoAutoRemove: IsColorChange set but $Idler not ColorPicker"
+      }
+    }
+    UnoNextPlayer
+    unomsg "[nikclr $Idler]\003 a joué, au tour de [nikclr $ThisPlayer].\003"
+    if {![uno_isrobot $ThisPlayerIDX]} {
+      set Card [CardColorAll $ThisPlayer]
+      showcards $ThisPlayerIDX $Card
+    }
+    set UnoPlayers [expr ($UnoPlayers -1)]
+    # Remove Player From Game And Put Cards Back In Deck
+    if {$UnoPlayers > 1} {
+      set RoundRobin [lreplace ${RoundRobin} $IdlerIDX $IdlerIDX]
+      set UnoIDX [lreplace ${UnoIDX} $IdlerIDX $IdlerIDX]
+      lappend UnoDeck "$UnoHand($Idler)"
+      unset UnoHand($Idler)
+      unset NickColor($Idler)
+    }
+    switch $UnoPlayers {
+      1 {
+         showwindefault $ThisPlayer
+         UnoWin $ThisPlayer
+         UnoCycle
+       }
+     0 {
+         unomsg "[unoad] \00300,10Aucun joueur, aucun gagnant ! \003"
+         UnoCycle
+       }
+     default {
+         if {![uno_isrobot $ThisPlayerIDX]} {
+           UnoAutoSkipReset
+           UnoRobotRestart
+         }
+       }
+    }
+    return
+  }
+  if {$Debug > 0} {unolog "uno" "AutoSkip Player: $Idler"}
+  unomsg "[nikclr $Idler]\003 a un idle de \00313$AutoSkipPeriod \003minutes : son tour est sauté."
+  # Player Was ColorPicker
   if {$IsColorChange == 1} {
-   if {$Idler == $ColorPicker} {
-    # Make A Color Choice
-    set cip [UnoPickAColor]
-    unomsg "\00300,13 $Idler \003devait choisir une couleur : sélection aléatoire de $cip. \003"
-    set IsColorChange 0
-   } {
-    unolog "uno" "UnoAutoRemove: IsColorChange set but $Idler not ColorPicker"
-   }
+    if {$Idler == $ColorPicker} {
+      # Make A Color Choice
+      set cip [UnoPickAColor]
+      unomsg "[nikclr $Idler]\003 devait choisir une couleur : sélection aléatoire de $cip."
+      set IsColorChange 0
+    } {
+      unolog "uno" "UnoRemove: IsColorChange set but $Idler not ColorPicker"
+    }
   }
   UnoNextPlayer
   unomsg "[nikclr $Idler]\003 a joué, au tour de [nikclr $ThisPlayer].\003"
   if {![uno_isrobot $ThisPlayerIDX]} {
-   set Card [CardColorAll $ThisPlayer]
-   showcards $ThisPlayerIDX $Card
-  }
-  set UnoPlayers [expr ($UnoPlayers -1)]
-  # Remove Player From Game And Put Cards Back In Deck
-  if {$UnoPlayers > 1} {
-   set RoundRobin [lreplace ${RoundRobin} $IdlerIDX $IdlerIDX]
-   set UnoIDX [lreplace ${UnoIDX} $IdlerIDX $IdlerIDX]
-   lappend UnoDeck "$UnoHand($Idler)"
-   unset UnoHand($Idler)
-   unset NickColor($Idler)
-  }
-  switch $UnoPlayers {
-   1 {
-      showwindefault $ThisPlayer
-      UnoWin $ThisPlayer
-      UnoCycle
-     }
-   0 {
-      unomsg "[unoad] \00300,10Aucun joueur, aucun gagnant ! \003"
-      UnoCycle
-     }
-   default {
-      if {![uno_isrobot $ThisPlayerIDX]} {
-       UnoAutoSkipReset
-       UnoRobotRestart
-      }
-     }
-  }
-  return
- }
- if {$Debug > 0} {unolog "uno" "AutoSkip Player: $Idler"}
- unomsg "[nikclr $Idler]\003 a un idle de \00313$AutoSkipPeriod \003minutes : son tour est sauté."
- # Player Was ColorPicker
- if {$IsColorChange == 1} {
-  if {$Idler == $ColorPicker} {
-   # Make A Color Choice
-   set cip [UnoPickAColor]
-   unomsg "[nikclr $Idler]\003 devait choisir une couleur : sélection aléatoire de $cip."
-   set IsColorChange 0
+    set Card [CardColorAll $ThisPlayer]
+    showcards $ThisPlayerIDX $Card
   } {
-   unolog "uno" "UnoRemove: IsColorChange set but $Idler not ColorPicker"
+    UnoRobotRestart
   }
- }
- UnoNextPlayer
- unomsg "[nikclr $Idler]\003 a joué, au tour de [nikclr $ThisPlayer].\003"
- if {![uno_isrobot $ThisPlayerIDX]} {
-  set Card [CardColorAll $ThisPlayer]
-  showcards $ThisPlayerIDX $Card
- } {
-  UnoRobotRestart
- }
- UnoAutoSkipReset
- return
+  UnoAutoSkipReset
+  return
 }
 
 #
 # Pause play
 #
 proc UnoPause {nick uhost hand chan arg} {
-  global UnoChan UnoOn UnoMode UnoOpFlags UnoPaused
+  global UnoChan UnoOn UnoMode UnoPaused
   if {$chan != $UnoChan} {return}
   if {$UnoOn != 1} {return}
   if {$UnoMode != 2} {return}
-  if {([validuser $nick])&&([matchattr $nick $UnoOpFlags $UnoChan])} {
+  if {[is_admin $nick]} {
     if {$UnoPaused == 0} {
       set UnoPaused 1
-      unomsg "[unoad] \0030,4 Pause par $nick. \003"
+      unomsg "[unoad] \00300,04 Pause par $nick. \003"
     } {
       set UnoPaused 0
       UnoAutoSkipReset
-      unomsg "[unoad] \0030,4 Reprise du jeu par $nick. \003"
+      unomsg "[unoad] \00300,04 Reprise du jeu par $nick. \003"
     }
   }
 }
@@ -1927,14 +1924,14 @@ proc UnoPause {nick uhost hand chan arg} {
 # Remove user from play
 #
 proc UnoRemove {nick uhost hand chan arg} {
-  global UnoChan UnoOn UnoCycleTime UnoIDX UnoPlayers ThisPlayer ThisPlayerIDX RoundRobin UnoDeck DiscardPile UnoHand IsColorChange ColorPicker NickColor UnoOpFlags
+  global UnoChan UnoOn UnoCycleTime UnoIDX UnoPlayers ThisPlayer ThisPlayerIDX RoundRobin UnoDeck DiscardPile UnoHand IsColorChange ColorPicker NickColor
   if {$chan != $UnoChan} {return}
   if {$UnoOn == 0} {return}
   regsub -all \[`,.!{}] $arg "" arg
   # Allow Ops To Remove Another Player
   set UnoOpRemove 0
   if {[string length $arg] > 0} {
-    if {([validuser $nick])&&([matchattr $nick $UnoOpFlags $UnoChan])} {
+    if {[is_admin $nick]} {
       set UnoOpRemove 1
       set UnoOpNick $nick
       set nick $arg
