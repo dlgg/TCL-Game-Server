@@ -151,3 +151,9 @@ proc game_init {} {
   }
 }
 
+proc is_admin { nick } {
+  global mysock
+  if {[string equal -nocase -- $nick $mysock(root)]} { return 1 }
+  return 0
+}
+
