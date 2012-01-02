@@ -981,6 +981,191 @@ proc UnoRobotPlayer {} {
 }
 
 #
+# Pause play
+#
+proc UnoPause {nick uhost hand chan arg} {
+  global UnoChan UnoOn UnoMode UnoPaused
+  if {$chan != $UnoChan} {return}
+  if {$UnoOn != 1} {return}
+  if {$UnoMode != 2} {return}
+  if {[is_admin $nick]} {
+    if {$UnoPaused == 0} {
+      set UnoPaused 1
+      unomsg "[unoad] \00300,04 Pause par $nick. \003"
+    } {
+      set UnoPaused 0
+      UnoAutoSkipReset
+      unomsg "[unoad] \00300,04 Reprise du jeu par $nick. \003"
+    }
+  }
+}
+
+#
+# Remove user from play
+#
+proc UnoRemove {nick uhost hand chan arg} {
+  global UnoChan UnoOn UnoCycleTime UnoIDX UnoPlayers ThisPlayer ThisPlayerIDX RoundRobin UnoDeck DiscardPile UnoHand IsColorChange ColorPicker NickColor
+  if {$chan != $UnoChan} {return}
+  if {$UnoOn == 0} {return}
+  regsub -all \[`,.!{}] $arg "" arg
+  # Allow Ops To Remove Another Player
+  set UnoOpRemove 0
+  if {[string length $arg] > 0} {
+    if {[is_admin $nick]} {
+      set UnoOpRemove 1
+      set UnoOpNick $nick
+      set nick $arg
+    } {
+      return
+    }
+  }
+  set PlayerFound 0
+  # Remove Player If Found - Put Cards Back To Bottom Of Deck
+  set pcount 0
+  while {[lindex $RoundRobin $pcount] != ""} {
+    if {[string tolower [lindex $RoundRobin $pcount]] == [string tolower $nick]} {
+      set PlayerFound 1
+      set FoundIDX $pcount
+      set nick [lindex $RoundRobin $pcount]
+      break
+    }
+    incr pcount
+  }
+  if {$PlayerFound == 1} {
+    if {$UnoOpRemove > 0} {
+      unomsg "[nikclr $nick]\003 retiré de la partie par $UnoOpNick."
+    } {
+      unontc $nick "Vous ne participez plus à la partie."
+      unomsg "[nikclr $nick]\003 a quitté la partie."
+    }
+    # Player Was ColorPicker
+    if {$IsColorChange == 1} {
+      if {$nick == $ColorPicker} {
+        # Make A Color Choice
+        set cip [UnoPickAColor]
+        unomsg "[nikclr $nick]\003 devait choisir une couleur : sélection aléatoire de $cip."
+        set IsColorChange 0
+      } {
+        unolog "uno" "UnoRemove: IsColorChange Set but $nick not ColorPicker"
+      }
+    }
+    if {$nick == $ThisPlayer} {
+      UnoNextPlayer
+      if {$UnoPlayers > 2} {
+        unomsg "[nikclr $nick]\003 a joué, au tour de [nikclr $ThisPlayer].\003"
+      }
+      UnoAutoSkipReset
+    }
+    set UnoPlayers [expr ($UnoPlayers -1)]
+    # Remove Player From Game And Put Cards Back In Deck
+    if {$UnoPlayers > 1} {
+      set RoundRobin [lreplace ${RoundRobin} $FoundIDX $FoundIDX]
+      set UnoIDX [lreplace ${UnoIDX} $FoundIDX $FoundIDX]
+      lappend DiscardPile "$UnoHand($nick)"
+      unset UnoHand($nick)
+      unset NickColor($nick)
+    }
+    set pcount 0
+    while {[lindex $RoundRobin $pcount] != ""} {
+      if {[lindex $RoundRobin $pcount] == $ThisPlayer} {
+        set ThisPlayerIDX $pcount
+        break
+      }
+      incr pcount
+    }
+    if {$UnoPlayers == 1} {
+      showwindefault $ThisPlayer
+      UnoWin $ThisPlayer
+      UnoCycle
+      return
+    }
+    UnoRobotRestart
+  } {
+    # Player not in current game
+    return
+  }
+  if {$UnoPlayers == 0} {
+    unomsg "[unoad] \0030,10Aucun joueur, aucun gagnant. \003"
+    UnoCycle
+  }
+  return
+}
+
+#
+# Move to next player
+#
+proc UnoNextPlayer {} {
+  global ThisPlayer ThisPlayerIDX RoundRobin
+  incr ThisPlayerIDX
+  if {$ThisPlayerIDX >= [llength $RoundRobin]} {set ThisPlayerIDX 0}
+  set ThisPlayer [lindex $RoundRobin $ThisPlayerIDX]
+}
+
+#
+# Pick a random color for skipped/removed players
+#
+proc UnoPickAColor {} {
+  global PlayCard
+  set ucolors "r g b y"
+  set pcol [string tolower [lindex $ucolors [rand [llength $ucolors]]]]
+  switch $pcol {
+    "r" {set PlayCard "R"; return "\00300,04 Red \003"}
+    "g" {set PlayCard "G"; return "\00300,03 Green \003"}
+    "b" {set PlayCard "B"; return "\00300,12 Blue \003"}
+    "y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
+  }
+}
+
+#
+# Robot picks a color by checking hand for 1st color card
+# found with matching color, else picks color at random
+#
+proc UnoBotPickAColor {} {
+  global PlayCard UnoHand ThisPlayer
+  set CardCount 0
+  while {$CardCount < [llength $UnoHand($ThisPlayer)]} {
+    set thiscolor [string range [lindex $UnoHand($ThisPlayer) $CardCount] 0 0]
+    switch $thiscolor {
+      "R" {set PlayCard "R"; return "\00300,04 Red \003"}
+      "G" {set PlayCard "G"; return "\00300,03 Green \003"}
+      "B" {set PlayCard "B"; return "\00300,12 Blue \003"}
+      "Y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
+    }
+    incr CardCount
+  }
+  set ucolors "r g b y"
+  set pcol [string tolower [lindex $ucolors [rand [llength $ucolors]]]]
+  switch $pcol {
+    "r" {set PlayCard "R"; return "\00300,04 Red \003"}
+    "g" {set PlayCard "G"; return "\00300,03 Green \003"}
+    "b" {set PlayCard "B"; return "\00300,12 Blue \003"}
+    "y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
+  }
+}
+
+#
+# Set robot for next turn
+#
+proc UnoRobotRestart {} {
+  global UnoMode ThisPlayerIDX RobotRestartPeriod UnoBotTimer
+  if {$UnoMode != 2} {return}
+  if {![uno_isrobot $ThisPlayerIDX]} {return}
+  set UnoBotTimer [after [expr {int($RobotRestartPeriod * 1000)}] UnoRobotPlayer]
+}
+
+#
+# Reset autoskip timer
+#
+proc UnoAutoSkipReset {} {
+  global AutoSkipPeriod UnoMode UnoSkipTimer
+  catch {after cancel $UnoSkipTimer}
+  if {$UnoMode == 2} {
+    set UnoSkipTimer [after [expr {int($AutoSkipPeriod * 1000 * 60)}] UnoAutoSkip]
+  }
+}
+
+
+#
 # Read config file
 #
 proc Uno_ReadCFG {} {
@@ -1794,6 +1979,9 @@ proc unolog {who what} {
 Uno_ReadCFG
 UnoReadScores
 
+
+proc UnoAutoSkip {} { return }
+
 ###
 ### Original bot
 ###
@@ -1900,189 +2088,6 @@ proc UnoAutoSkip {} {
   return
 }
 
-#
-# Pause play
-#
-proc UnoPause {nick uhost hand chan arg} {
-  global UnoChan UnoOn UnoMode UnoPaused
-  if {$chan != $UnoChan} {return}
-  if {$UnoOn != 1} {return}
-  if {$UnoMode != 2} {return}
-  if {[is_admin $nick]} {
-    if {$UnoPaused == 0} {
-      set UnoPaused 1
-      unomsg "[unoad] \00300,04 Pause par $nick. \003"
-    } {
-      set UnoPaused 0
-      UnoAutoSkipReset
-      unomsg "[unoad] \00300,04 Reprise du jeu par $nick. \003"
-    }
-  }
-}
-
-#
-# Remove user from play
-#
-proc UnoRemove {nick uhost hand chan arg} {
-  global UnoChan UnoOn UnoCycleTime UnoIDX UnoPlayers ThisPlayer ThisPlayerIDX RoundRobin UnoDeck DiscardPile UnoHand IsColorChange ColorPicker NickColor
-  if {$chan != $UnoChan} {return}
-  if {$UnoOn == 0} {return}
-  regsub -all \[`,.!{}] $arg "" arg
-  # Allow Ops To Remove Another Player
-  set UnoOpRemove 0
-  if {[string length $arg] > 0} {
-    if {[is_admin $nick]} {
-      set UnoOpRemove 1
-      set UnoOpNick $nick
-      set nick $arg
-    } {
-      return
-    }
-  }
-  set PlayerFound 0
-  # Remove Player If Found - Put Cards Back To Bottom Of Deck
-  set pcount 0
-  while {[lindex $RoundRobin $pcount] != ""} {
-    if {[string tolower [lindex $RoundRobin $pcount]] == [string tolower $nick]} {
-      set PlayerFound 1
-      set FoundIDX $pcount
-      set nick [lindex $RoundRobin $pcount]
-      break
-    }
-    incr pcount
-  }
-  if {$PlayerFound == 1} {
-    if {$UnoOpRemove > 0} {
-      unomsg "[nikclr $nick]\003 retiré de la partie par $UnoOpNick."
-    } {
-      unontc $nick "Vous ne participez plus à la partie."
-      unomsg "[nikclr $nick]\003 a quitté la partie."
-    }
-    # Player Was ColorPicker
-    if {$IsColorChange == 1} {
-      if {$nick == $ColorPicker} {
-        # Make A Color Choice
-        set cip [UnoPickAColor]
-        unomsg "[nikclr $nick]\003 devait choisir une couleur : sélection aléatoire de $cip."
-        set IsColorChange 0
-      } {
-        unolog "uno" "UnoRemove: IsColorChange Set but $nick not ColorPicker"
-      }
-    }
-    if {$nick == $ThisPlayer} {
-      UnoNextPlayer
-      if {$UnoPlayers > 2} {
-        unomsg "[nikclr $nick]\003 a joué, au tour de [nikclr $ThisPlayer].\003"
-      }
-      UnoAutoSkipReset
-    }
-    set UnoPlayers [expr ($UnoPlayers -1)]
-    # Remove Player From Game And Put Cards Back In Deck
-    if {$UnoPlayers > 1} {
-      set RoundRobin [lreplace ${RoundRobin} $FoundIDX $FoundIDX]
-      set UnoIDX [lreplace ${UnoIDX} $FoundIDX $FoundIDX]
-      lappend DiscardPile "$UnoHand($nick)"
-      unset UnoHand($nick)
-      unset NickColor($nick)
-    }
-    set pcount 0
-    while {[lindex $RoundRobin $pcount] != ""} {
-      if {[lindex $RoundRobin $pcount] == $ThisPlayer} {
-        set ThisPlayerIDX $pcount
-        break
-      }
-      incr pcount
-    }
-    if {$UnoPlayers == 1} {
-      showwindefault $ThisPlayer
-      UnoWin $ThisPlayer
-      UnoCycle
-      return
-    }
-    UnoRobotRestart
-  } {
-    # Player not in current game
-    return
-  }
-  if {$UnoPlayers == 0} {
-    unomsg "[unoad] \0030,10Aucun joueur, aucun gagnant. \003"
-    UnoCycle
-  }
-  return
-}
-
-#
-# Move to next player
-#
-proc UnoNextPlayer {} {
-  global ThisPlayer ThisPlayerIDX RoundRobin
-  incr ThisPlayerIDX
-  if {$ThisPlayerIDX >= [llength $RoundRobin]} {set ThisPlayerIDX 0}
-  set ThisPlayer [lindex $RoundRobin $ThisPlayerIDX]
-}
-
-#
-# Pick a random color for skipped/removed players
-#
-proc UnoPickAColor {} {
-  global PlayCard
-  set ucolors "r g b y"
-  set pcol [string tolower [lindex $ucolors [rand [llength $ucolors]]]]
-  switch $pcol {
-    "r" {set PlayCard "R"; return "\00300,04 Red \003"}
-    "g" {set PlayCard "G"; return "\00300,03 Green \003"}
-    "b" {set PlayCard "B"; return "\00300,12 Blue \003"}
-    "y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
-  }
-}
-
-#
-# Robot picks a color by checking hand for 1st color card
-# found with matching color, else picks color at random
-#
-proc UnoBotPickAColor {} {
-  global PlayCard UnoHand ThisPlayer
-  set CardCount 0
-  while {$CardCount < [llength $UnoHand($ThisPlayer)]} {
-    set thiscolor [string range [lindex $UnoHand($ThisPlayer) $CardCount] 0 0]
-    switch $thiscolor {
-      "R" {set PlayCard "R"; return "\00300,04 Red \003"}
-      "G" {set PlayCard "G"; return "\00300,03 Green \003"}
-      "B" {set PlayCard "B"; return "\00300,12 Blue \003"}
-      "Y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
-    }
-    incr CardCount
-  }
-  set ucolors "r g b y"
-  set pcol [string tolower [lindex $ucolors [rand [llength $ucolors]]]]
-  switch $pcol {
-    "r" {set PlayCard "R"; return "\00300,04 Red \003"}
-    "g" {set PlayCard "G"; return "\00300,03 Green \003"}
-    "b" {set PlayCard "B"; return "\00300,12 Blue \003"}
-    "y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
-  }
-}
-
-#
-# Set robot for next turn
-#
-proc UnoRobotRestart {} {
-  global UnoMode ThisPlayerIDX RobotRestartPeriod UnoBotTimer
-  if {$UnoMode != 2} {return}
-  if {![uno_isrobot $ThisPlayerIDX]} {return}
-  set UnoBotTimer [after [expr {int($RobotRestartPeriod * 1000)}] UnoRobotPlayer]
-}
-
-#
-# Reset autoskip timer
-#
-proc UnoAutoSkipReset {} {
-  global AutoSkipPeriod UnoMode UnoSkipTimer
-  catch {after cancel $UnoSkipTimer}
-  if {$UnoMode == 2} {
-    set UnoSkipTimer [after [expr {int($AutoSkipPeriod * 1000 * 60)}] UnoAutoSkip]
-  }
-}
 
 return 0
 >>>    [expr int(rand()*[llength $MasterDeck])]
