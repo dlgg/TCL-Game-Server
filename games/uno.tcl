@@ -73,8 +73,8 @@ set mysock(users-$mysock(uno-chan)) ""
 
 proc uno_control_pub { nick text } {
   # nick uhost hand chan arg
-  global mysock UnoOn UnoPaused
-  fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PUB \002 $nick > [join $text]"
+  global mysock UnoOn UnoPaused Debug
+  if {$Debug == 1 } { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PUB \002 $nick > [join $text]" }
   if {[string equal -nocase "!uno-reset" [lindex $text 0]]} { UnoReset; set UnoOn 0 }
   if {[string equal -nocase "!uno" [lindex $text 0]]} { UnoInit $nick "none" "-" $mysock(uno-chan) "$text" }
   if {[string equal -nocase "!unocmds" [lindex $text 0]]} { UnoCmds $nick "none" "-" $mysock(uno-chan) "$text" }
@@ -232,7 +232,7 @@ proc UnoInit {nick uhost hand chan arg} {
 # Initialize a new game
 #
 proc UnoNext {} {
-  global UnoOn MasterDeck UnoDeck UnoMode StartGracePeriod UnoHand NickColor UnoVersion UnoStartTimer UnoSkipTimer
+  global UnoOn MasterDeck UnoDeck UnoMode StartGracePeriod UnoHand NickColor UnoVersion UnoStartTimer UnoSkipTimer Debug
   if {$UnoOn == 0} {return}
   UnoReset
   set UnoMode 1
@@ -240,7 +240,7 @@ proc UnoNext {} {
   set UnoDeck ""
 
   binary scan [unixtime] S1 rseed
-  set newrand [expr srand($rseed)]
+  set newrand [expr srand([unixtime])]
   while {[llength $UnoDeck] != 108} {
     set pcardnum [expr {int(rand()*[llength $MasterDeck])}]
     set pcard [lindex $MasterDeck $pcardnum]
@@ -252,7 +252,7 @@ proc UnoNext {} {
   unomsg "[unoad]\003 \00300,12Tapez jo pour rejoindre la partie ! Vous avez $StartGracePeriod secondes. \003"
   #set UnoStartTimer [utimer $StartGracePeriod UnoStart]
   set UnoStartTimer [after [expr {int($StartGracePeriod * 1000)}] UnoStart]
-  puts "[after info]"
+  if {$Debug == 1 } { puts "[after info]" }
   return
 }
 
@@ -262,6 +262,7 @@ proc UnoNext {} {
 proc UnoStart {} {
   global UnoChan UnoOn UnoCycleTime UnoRobot Debug UnoIDX UnoStartTime UnoPlayers RoundRobin ThisPlayer ThisPlayerIDX UnoDeck DiscardPile UnoMode UnoHand PlayCard AutoSkipPeriod
   global UnoSkipTimer UnPlayedRounds UnoStopAfter NickColor
+  global mysock
   if {$UnoOn == 0} {return}
   if {[llength $RoundRobin] == 0} {
     unomsg "[unoad] \00300,03Aucun joueur, prochain jeu dans $UnoCycleTime secondes. \003"
@@ -291,7 +292,7 @@ proc UnoStart {} {
     UnoShuffle 7
 
     while {[llength $UnoHand($UnoRobot)] != 7} {
-      set pcardnum [rand [llength $UnoDeck]]
+      set pcardnum [expr {int(rand() * [llength $UnoDeck])}]
       set pcard [lindex $UnoDeck $pcardnum]
       set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
       lappend UnoHand($UnoRobot) "$pcard"
@@ -305,12 +306,12 @@ proc UnoStart {} {
 
   # Draw Card From Deck - First Top Card
   set DiscardPile ""
-  set pcardnum [rand [llength $UnoDeck]]
+  set pcardnum [expr {int(rand() * [llength $UnoDeck])}]
   set pcard [lindex $UnoDeck $pcardnum]
 
   # Play Doesnt Start With A Wild Card
   while {[string range $pcard 0 0] == "W"} {
-    set pcardnum [rand [llength $UnoDeck]]
+    set pcardnum [expr {int(rand() * [llength $UnoDeck])}]
     set pcard [lindex $UnoDeck $pcardnum]
   }
 
@@ -393,7 +394,7 @@ proc JoinUno {nick uhost hand chan arg} {
   # Deal Cards To Player
   set Card ""
   while {[llength $UnoHand($nick)] != 7} {
-    set pcardnum [rand [llength $UnoDeck]]
+    set pcardnum [expr {int(rand() * [llength $UnoDeck])}]
     set pcard [lindex $UnoDeck $pcardnum]
     set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
     lappend UnoHand($nick) $pcard
@@ -456,7 +457,7 @@ proc UnoAddDrawToHand {cplayer idx num} {
   set Card ""
   set newhand [expr [llength $UnoHand($cplayer)] + $num]
   while {[llength $UnoHand($cplayer)] != $newhand} {
-    set pcardnum [rand [llength $UnoDeck]]
+    set pcardnum [expr {int(rand() * [llength $UnoDeck])}]
     set pcard [lindex $UnoDeck $pcardnum]
     set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
     lappend UnoHand($cplayer) $pcard
@@ -493,7 +494,7 @@ proc UnoDraw {nick uhost hand chan arg} {
   if {$IsDraw == 0} {
     set IsDraw 1
     UnoShuffle 1
-    set dcardnum [rand [llength $UnoDeck]]
+    set dcardnum [expr {int(rand() * [llength $UnoDeck])}]
     set dcard [lindex $UnoDeck $dcardnum]
     lappend UnoHand($nick) $dcard
     set UnoDeck [lreplace ${UnoDeck} $dcardnum $dcardnum]
@@ -535,12 +536,16 @@ proc UnoPass {nick uhost hand chan arg} {
 # Color change
 #
 proc UnoColorChange {nick uhost hand chan arg} {
-  global UnoChan UnoMode IsDraw PlayCard ColorPicker IsColorChange ThisPlayer ThisPlayerIDX RoundRobin
+  global UnoChan UnoMode IsDraw PlayCard ColorPicker IsColorChange ThisPlayer ThisPlayerIDX RoundRobin Debug
   if {($chan != $UnoChan)||($UnoMode != 2)} {return}
   if {($nick != $ColorPicker)||($IsColorChange == 0)} {return}
   UnoAutoSkipReset
-  regsub -all \[`.,!{}] $arg "" arg
-  set NewColor [string toupper [string range $arg 0 0]]
+  regsub -all \[`.,!{}\ ] $arg "" arg
+  set NewColor [string toupper [string range $arg 2 2]]
+  if {$Debug == 1} {
+    puts "arg : $arg"
+    puts "couleur demandée : $NewColor"
+  }
   switch $NewColor {
     "B" { set PlayCard "B"; set Card " \00300,12 Blue \003 "}
     "G" { set PlayCard "G"; set Card " \00300,03 Green \003 "}
@@ -871,15 +876,20 @@ proc UnoFindCard {nick pickednum crd IsRobot} {
 # Play a card
 #
 proc UnoPlayCard {nick uhost hand chan arg} {
-  global UnoChan UnoMode IsDraw IsColorChange ColorPicker UnoPlayers RoundRobin UnoHand ThisPlayer
+  global UnoChan UnoMode IsDraw IsColorChange ColorPicker UnoPlayers RoundRobin UnoHand ThisPlayer Debug
   if {($chan != $UnoChan)||($UnoMode != 2)||($nick != $ThisPlayer)} {return}
   UnoAutoSkipReset
   if {$IsColorChange == 1} {return}
   regsub -all \[`,.!{}\ ] $arg "" arg
   if {$arg == ""} {return}
-  set pcard [string toupper [string range $arg 0 3]]
+  set pcard [string toupper [string range $arg 2 end]]
   set CardInPlayerHand 0
   set pcount 0
+  if {$Debug==1} {
+    puts "arg : $arg"
+    puts "main du joueur : $UnoHand($nick)"
+    puts "carde demandée : $pcard"
+  }
   while {[lindex $UnoHand($nick) $pcount] != ""} {
     if {$pcard == [lindex $UnoHand($nick) $pcount]} {
       set pcardnum $pcount
@@ -904,7 +914,6 @@ proc UnoPlayCard {nick uhost hand chan arg} {
 #
 # Robot Player
 #
-
 proc UnoRobotPlayer {} {
   global Debug UnoIDX IsDraw IsColorChange ColorPicker UnoMode UnoPlayers RoundRobin UnoDeck UnoHand ThisPlayer ThisPlayerIDX PlayCard CardStats UnoRobot
   # Check for a valid card in hand
@@ -938,7 +947,7 @@ proc UnoRobotPlayer {} {
   }
   # Bot draws a card
   UnoShuffle 1
-  set dcardnum [rand [llength $UnoDeck]]
+  set dcardnum [expr {int(rand() * [llength $UnoDeck])}]
   set dcard [lindex $UnoDeck $dcardnum]
   lappend UnoHand($UnoRobot) "$dcard"
   set UnoDeck [lreplace ${UnoDeck} $dcardnum $dcardnum]
@@ -1107,7 +1116,7 @@ proc UnoNextPlayer {} {
 proc UnoPickAColor {} {
   global PlayCard
   set ucolors "r g b y"
-  set pcol [string tolower [lindex $ucolors [rand [llength $ucolors]]]]
+  set pcol [string tolower [lindex $ucolors [expr {int(rand() * [llength $ucolors])}]]]
   switch $pcol {
     "r" {set PlayCard "R"; return "\00300,04 Red \003"}
     "g" {set PlayCard "G"; return "\00300,03 Green \003"}
@@ -1134,7 +1143,7 @@ proc UnoBotPickAColor {} {
     incr CardCount
   }
   set ucolors "r g b y"
-  set pcol [string tolower [lindex $ucolors [rand [llength $ucolors]]]]
+  set pcol [string tolower [lindex $ucolors [expr {int(rand() * [llength $ucolors])}]]]
   switch $pcol {
     "r" {set PlayCard "R"; return "\00300,04 Red \003"}
     "g" {set PlayCard "G"; return "\00300,03 Green \003"}
@@ -1734,7 +1743,7 @@ proc UnoShuffle {len} {
   set UnoDeck ""
   set NewDeckSize [llength $DiscardPile]
   while {[llength $UnoDeck] != $NewDeckSize} {
-    set pcardnum [rand [llength $DiscardPile]]
+    set pcardnum [expr {int(rand() * [llength $DiscardPile])}]
     set pcard [lindex $DiscardPile $pcardnum]
     lappend UnoDeck "$pcard"
     set DiscardPile [lreplace ${DiscardPile} $pcardnum $pcardnum]
