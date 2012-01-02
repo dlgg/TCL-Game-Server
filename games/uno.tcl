@@ -90,7 +90,7 @@ proc uno_control_pub { nick text } {
   if {[string equal -nocase "!unorecords" [lindex $text 0]]} { UnoRecords $nick "none" "-" $mysock(uno-chan) "$text" }
   if {[string equal -nocase "!unoversion" [lindex $text 0]]} { UnoVersion $nick "none" "-" $mysock(uno-chan) "$text" }
   if {[string equal -nocase "!stop" [lindex $text 0]]} { UnoStop $nick "none" "-" $mysock(uno-chan) "$text" }
-  if {($UnoOn != 0)&&(UnoPaused == 0)} {
+  if {($UnoOn != 0)&&($UnoPaused == 0)} {
     if {[string equal -nocase "join" [lindex $text 0]]} { JoinUno $nick "none" "-" $mysock(uno-chan) "$text" }
     if {[string equal -nocase "jo" [lindex $text 0]]} { JoinUno $nick "none" "-" $mysock(uno-chan) "$text" }
     if {[string equal -nocase "!jo" [lindex $text 0]]} { JoinUno $nick "none" "-" $mysock(uno-chan) "$text" }
