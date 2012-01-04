@@ -92,7 +92,7 @@ proc socket_control {sock} {
     # Send info to addon proc for master bot
     if {[string index $to 0]=="#"} {
       foreach addon $mysock(proc-addon) {
-        if {[info procs $addon]==$addon} { puts "Sending to $addon"; $addon $from $to "$commc" }
+        if {[info procs $addon]==$addon} { $addon $from $to "$commc" }
       }
     }
     # Send info to bot who need it
