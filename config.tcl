@@ -46,6 +46,7 @@ set mysock(plport) 15000
 
 # Internal variables
 set mysock(version) "0.1"
+set mysock(proc-addon) ""
 set gameserver 0
 if {[info exists pl]} {
   puts "La PL est déjà chargée."

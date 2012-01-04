@@ -86,8 +86,16 @@ proc socket_control {sock} {
   if {[lindex $arg 1]=="PRIVMSG"} {
     set from [string range [lindex $arg 0] 1 end]
     set to [lindex $arg 2]
+    set commc [list [string range [lindex $arg 3] 1 end] [lrange $arg 4 end]]
     set comm [stripmirc [list [string range [lindex $arg 3] 1 end] [lrange $arg 4 end]]]
 
+    # Send info to addon proc for master bot
+    if {[string index $to 0]=="#"} {
+      foreach addon $mysock(proc-addon) {
+        if {[info procs $addon]==$addon} { puts "Sending to $addon"; $addon $from $to "$commc" }
+      }
+    }
+    # Send info to bot who need it
     if {[info exists mysock(proc-[string tolower $to])]} {
       $mysock(proc-[string tolower $to]) $from "$comm"
     }
