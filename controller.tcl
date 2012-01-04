@@ -131,12 +131,13 @@ proc socket_control {sock} {
       }
       # Commmande !part #chan
       if {[string equal -nocase "$mysock(cmdchar)part" [lindex $comm 0]]} {
-        if {[string tolower [lindex $comm 1]]==[string tolower $mysock(adminchan)]} {
-          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :Je ne peux pas partir de [lindex $comm 1] !"
-          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$from a tenté de me faire partir de [lindex $comm 1] !"
+        set pchan [join [string tolower [lindex $comm 1]]]
+        if {$pchan==[string tolower $mysock(adminchan)]} {
+          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :Je ne peux pas partir de $pchan !"
+          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$from a tenté de me faire partir de $pchan !"
           return 0
         } else {
-          fsend $mysock(sock) ":$mysock(nick) PART [lindex $comm 1] :$from m'a demandé de partir !"
+          fsend $mysock(sock) ":$mysock(nick) PART $pchan :$from m'a demandé de partir !"
         }
       }
       # Commande !die
@@ -146,6 +147,12 @@ proc socket_control {sock} {
         }
         fsend $mysock(sock) "SQUIT $mysock(hub)"
         exit 0
+      }
+      # Commande !flood
+      if {[string equal -nocase "$mysock(cmdchar)flood" [lindex $comm 0]]} {
+        for {set num 1} {$num < 129} {incr i} {
+          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :Test de flood sur IRC N° $num"
+        }
       }
 #      # Commande !restart
 #      if {[string equal -nocase "$mysock(cmdchar)restart" [lindex $comm 0]]} {
@@ -167,7 +174,16 @@ proc socket_control {sock} {
     return 0
   }
   if {[lindex $arg 1]=="KILL"&&[lindex $arg 2]==$mysock(nick)} { bot_init $mysock(nick) $mysock(username) $mysock(hostname) $mysock(realname); return 0 }
-  if {[lindex $arg 1]=="KICK"&&[lindex $arg 3]==$mysock(nick)} { join_chan $mysock(nick) [lindex $arg 2]; return 0 }
+  if {[lindex $arg 1]=="KICK"} {
+    if {[lindex $arg 3]==$mysock(nick)} {
+      join_chan $mysock(nick) $to
+    }
+    foreach bot $mysock(botlist) {
+      if {[lindex $arg 3]==$bot} {
+        join_chan $bot $to
+      }
+    }
+  }
 }
 
 set gameserver 1
