@@ -175,6 +175,7 @@ proc socket_control {sock} {
   }
   if {[lindex $arg 1]=="KILL"&&[lindex $arg 2]==$mysock(nick)} { bot_init $mysock(nick) $mysock(username) $mysock(hostname) $mysock(realname); return 0 }
   if {[lindex $arg 1]=="KICK"} {
+    set to [lindex $arg 2]
     if {[lindex $arg 3]==$mysock(nick)} {
       join_chan $mysock(nick) $to
     }
