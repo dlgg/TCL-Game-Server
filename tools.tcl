@@ -100,6 +100,8 @@ proc my_rehash {} {
   source games/uno.tcl
   puts "Chargement du Poker"
   source games/poker.tcl
+  puts "Chargement de l'addon YouTube"
+  source games/youtube.tcl
   fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304Rehash effectué"
 }
 

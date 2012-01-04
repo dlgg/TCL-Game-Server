@@ -36,6 +36,9 @@ source games/uno.tcl
 puts "Chargement du Poker"
 source games/poker.tcl
 
+puts "Chargement de l'addon YouTube"
+source games/youtube.tcl
+
 puts "Démarrage des services."
 if {$gameserver=="1"} { socket_connect; set gameserver 2 }
 if {$pl=="1"} { pl_server; set pl 2 }
