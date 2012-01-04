@@ -67,8 +67,8 @@ proc rand {l} {
 # Gestion complémentaire de listes
 proc lremove { list element } {
   set final ""
-  foreach l $list { if {![testcs $l $element]} { lappend final $l } }
-  return [nodouble $final]
+  foreach l $list { if {![string equal -nocase $l $element]} { lappend final $l } }
+  return $final
 }
 
 proc nodouble { var } {
@@ -88,6 +88,8 @@ proc nodouble { var } {
 # Proc gestion du service
 proc my_rehash {} {
   global mysock
+  puts "Fermeture de toutes les partylines"
+  foreach pl $mysock(pl) { puts "Fermeture de la PL : $pl"; close $pl }
   puts "Chargement des paramètres de configurations."
   source config.tcl
   puts "Chargement des outils."
@@ -107,8 +109,9 @@ proc my_rehash {} {
 
 proc fsend {sock data} {
   global mysock
-  foreach s $mysock(pl) { puts $s ">>> $data" }
-  puts ">>> [stripmirc $data]"
+  set data [stripmirc $data]
+  foreach s $mysock(plauthed) { if {![string equal $s $sock]} { puts $s ">>> $sock >>> $data" } }
+  puts ">>> \002$sock\002 >>> [stripmirc $data]"
   puts $sock $data
 }
 

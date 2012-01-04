@@ -32,7 +32,7 @@ proc socket_control {sock} {
   }
   set arg [charfilter $arg]
   # TODO : Verifier le chargement du module de PL
-  foreach s $mysock(pl) { puts $s "<<< $arg" }
+  foreach s $mysock(plauthed) { puts $s "<<< $arg" }
   puts "<<< $arg"
 
   if {[lrange $arg 1 end]=="NOTICE AUTH :*** Looking up your hostname..."} {

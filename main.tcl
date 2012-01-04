@@ -40,5 +40,5 @@ puts "Chargement de l'addon YouTube"
 source games/youtube.tcl
 
 puts "Démarrage des services."
-if {$gameserver=="1"} { socket_connect; set gameserver 2 }
-if {$pl=="1"} { pl_server; set pl 2 }
+if {$pl=="1"} { puts "Activation de la PL sur $mysock(plip):$mysock(plport)"; pl_server; set pl 2 }
+if {$gameserver=="1"} { puts "Connexion au réseau"; socket_connect; set gameserver 2 }

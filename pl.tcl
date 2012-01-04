@@ -33,7 +33,7 @@ proc pl { sockpl addr dstport } {
   puts "Arrivée d'une connexion Partyline."
   fileevent $sockpl readable [list pl_control $sockpl]
   lappend mysock(pl) $sockpl
-  nodouble $mysock(pl)
+  set mysock(pl) [nodouble $mysock(pl)]
   fconfigure $sockpl -buffering line
   fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL activée :\002\003 $sockpl > $mysock(plport):$addr:$dstport"
 }
@@ -41,27 +41,72 @@ proc pl { sockpl addr dstport } {
 proc pl_control { sockpl } {
   global mysock
   set argv [gets $sockpl arg]
+  set isauth 0
+  foreach pl $mysock(plauthed) { if {[test $pl $sockpl]} { set isauth 1 } }
   if {$argv=="-1"} {
     fsend $sockpl "Fermeture du socket PL $sockpl"
     fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Fermeture de la PL $sockpl"
     puts "Fermeture du socket PL $sockpl"
     lremove $mysock(pl) $sockpl
+    lremove $mysock(plauthed) $sockpl
     close $sockpl
   }
   set arg [charfilter $arg]
   puts "<<< $arg"
-  puts $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00312PL<<<\002 $sockpl \002<<<\003 $arg"
-
-  if {[lindex $arg 0]==".close"} {
-    fsend $sockpl "Fermeture du socket PL $sockpl par l'utilisateur"
-    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Fermeture de la PL $sockpl par l'utilisateur"
-    puts "Fermeture du socket PL $sockpl par l'utilisateur"
-    lremove $mysock(pl) $sockpl
-    close $sockpl
-  }
-  if {[lindex $arg 0]==".rehash"} {
-    my_rehash
-    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Rehash par la PL $sockpl"
+  puts $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00312PL <<<\002 $sockpl \002<<<\003 [join $arg]"
+  
+  if {$isauth==1} {
+    if {[lindex $arg 0]==".close"} {
+      if {[lindex $arg 1]==""} {
+        set socktoclose $sockpl
+      } else {
+        set socktoclose [lindex $arg 1]
+      } 
+      fsend $socktoclose "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
+      fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Fermeture de la PL $socktoclose par l'utilisateur $sockpl"
+      puts "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
+      lremove $mysock(pl) $socktoclose
+      lremove $mysock(plauthed) $socktoclose
+      after idle 2000
+      close $socktoclose
+    }
+    if {[lindex $arg 0]==".who"} {
+      fsend $sockpl "Présent en PL : $mysock(pl)"
+      fsend $sockpl "Présent en PL et auth : $mysock(plauthed)"
+    }
+    if {[lindex $arg 0]==".rehash"} {
+      my_rehash
+      fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Rehash par la PL $sockpl"
+    }
+    if {[lindex $arg 0]==".die"} {
+      fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Die par la PL $sockpl"
+      foreach bot $mysock(botlist) {
+        fsend $mysock(sock) ":$bot QUIT :Coupure des services demandée par $sockpl. "
+      }
+      fsend $mysock(sock) "SQUIT $mysock(hub)"
+      exit 0
+    }
+  } else {
+    if {([lindex $arg 0]==".pass")&&([string equal [lindex $arg 1] $mysock(plpass)])} {
+      lappend mysock(plauthed) $sockpl
+      set mysock(plauthed) [nodouble $mysock(plauthed)]
+      fsend $sockpl "You are authed !!!"
+    } elseif {[lindex $arg 0]==".close"} {
+      if {[lindex $arg 1]==""} {
+        set socktoclose $sockpl
+      } else {
+        set socktoclose [lindex $arg 1]
+      } 
+      fsend $socktoclose "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
+      fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Fermeture de la PL $socktoclose par l'utilisateur $sockpl"
+      puts "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
+      lremove $mysock(pl) $socktoclose
+      lremove $mysock(plauthed) $socktoclose
+      after idle 2000
+      close $socktoclose
+    } else {
+      fsend $sockpl "You are not authed. Please use .pass <password> to auth yourself."
+    }
   }
 }
 

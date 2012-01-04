@@ -41,8 +41,9 @@ set mysock(root) "Yume"
 set mysock(cmdchar) "!"
 
 # Partyline configuration
-set mysock(plip) 192.168.42.4
+set mysock(plip) 192.168.42.2
 set mysock(plport) 15000
+set mysock(plpass) "password"
 
 # Internal variables
 set mysock(version) "0.1"
@@ -53,6 +54,7 @@ if {[info exists pl]} {
 } else {
   set pl 0
   set mysock(pl) ""
+  set mysock(plauthed) ""
 }
 set numeric($mysock(numeric)) $mysock(servername)
 set mysock(users-description) "Array pour les utilisateurs présents sur un chan"
