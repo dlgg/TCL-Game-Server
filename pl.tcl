@@ -47,8 +47,8 @@ proc pl_control { sockpl } {
     fsend $sockpl "Fermeture du socket PL $sockpl"
     fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Fermeture de la PL $sockpl"
     puts "Fermeture du socket PL $sockpl"
-    lremove $mysock(pl) $sockpl
-    lremove $mysock(plauthed) $sockpl
+    set mysock(pl) [lremove $mysock(pl) $sockpl]
+    set mysock(plauthed) [lremove $mysock(plauthed) $sockpl]
     close $sockpl
   }
   set arg [charfilter $arg]
@@ -65,9 +65,9 @@ proc pl_control { sockpl } {
       fsend $socktoclose "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
       fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Fermeture de la PL $socktoclose par l'utilisateur $sockpl"
       puts "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
-      lremove $mysock(pl) $socktoclose
-      lremove $mysock(plauthed) $socktoclose
-      after idle 2000
+      set mysock(pl) [lremove $mysock(pl) $socktoclose]
+      set mysock(plauthed) [lremove $mysock(plauthed) $socktoclose]
+      after 2000
       close $socktoclose
     }
     if {[lindex $arg 0]==".who"} {
@@ -100,9 +100,8 @@ proc pl_control { sockpl } {
       fsend $socktoclose "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
       fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Fermeture de la PL $socktoclose par l'utilisateur $sockpl"
       puts "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
-      lremove $mysock(pl) $socktoclose
-      lremove $mysock(plauthed) $socktoclose
-      after idle 2000
+      set mysock(pl) [lremove $mysock(pl) $socktoclose]
+      set mysock(plauthed) [lremove $mysock(plauthed) $socktoclose]
       close $socktoclose
     } else {
       fsend $sockpl "You are not authed. Please use .pass <password> to auth yourself."
