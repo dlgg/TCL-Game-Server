@@ -158,7 +158,7 @@ proc socket_control {sock} {
       }
       # Commande !flood
       if {[string equal -nocase "$mysock(cmdchar)flood" [lindex $comm 0]]} {
-        for {set num 1} {$num < 129} {incr i} {
+        for {set num 1} {$num < 129} {incr num} {
           fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :Test de flood sur IRC N° $num"
         }
       }
