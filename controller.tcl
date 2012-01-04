@@ -32,8 +32,8 @@ proc socket_control {sock} {
   }
   set arg [charfilter $arg]
   # TODO : Verifier le chargement du module de PL
-  foreach s $mysock(plauthed) { puts $s "<<< $arg" }
-  puts "<<< $arg"
+  foreach s $mysock(plauthed) { puts $s "<<< $sock <<< [stripmirc $arg]" }
+  puts "<<< $sock <<< [stripmirc $arg]"
 
   if {[lrange $arg 1 end]=="NOTICE AUTH :*** Looking up your hostname..."} {
     fsend $sock "PROTOCTL NOQUIT NICKv2 UMODE2 VL SJ3 NS TKLEXT CLK"
