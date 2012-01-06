@@ -63,6 +63,5 @@ proc youtube_control { nick chan text } {
       fsend $mysock(sock) ":$mysock(nick) PRIVMSG [join [list $chan $mysock(adminchan)] ,]  :$youtube(logo) $a \002(\002[duration $length]\002) Viewed\002 $b"
     }
   }
-  #fsend $mysock(sock) ":$mysock(nick) PRIVMSG $chan :\002YT\002 $nick > [join $text]"
 }
 
