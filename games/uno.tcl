@@ -133,12 +133,13 @@ proc uno_control_pub { nick text } {
 
 proc uno_control_priv { nick text } {
   global mysock
-  fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PRIV\002 $nick > [join $text]"
+  if {$mysock(debug)==1} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PRIV\002 $nick > [join $text]" }
+  return
 }
 
 proc uno_control_join { nick } {
   global mysock
-  fsend $mysock(sock) ":$mysock(uno-nick) NOTICE $nick :Bienvenue ! Tapez \002!uno\017 pour lancer une partie de [unoad]\017 :) (Liste de mes commandes : \002!unocmds\017)"
+  fsend $mysock(sock) ":$mysock(uno-nick) NOTICE $nick :[::msgcat::mc uno_welcome [unoad]]"
 }
 
 # Global Variables
@@ -211,20 +212,21 @@ set UnoVersion "0.96.74.3"
 #
 proc UnoInit {nick uhost hand chan arg} {
   global UnoChan UnoOn mysock
-  puts "UNO : !uno par $nick sur $chan."
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO :\017 !uno par \00302$nick\017 sur \00302$chan\017."
+  set msg0 [::msgcat::mc uno_unocmd $nick $chan]
+  puts [stripmirc $msg0]
+  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$msg0"
   if {$UnoOn > 0} {
-    if {$chan != $UnoChan} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $chan :[unoad]\00306 Désolé, une partie est en cours sur un autre salon." }
-    if {$chan == $UnoChan} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $chan :[unoad]\00306 Une partie est déjà en cours !" }
+    if {$chan != $UnoChan} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $chan :[::msgcat::mc uno_startalready0 [unoad]]" }
+    if {$chan == $UnoChan} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $chan :[::msgcat::mc uno_startalready1 [unoad]]" }
     return
   }
   set UnoChan $chan
-  puts "UNO : Partie démarrée sur $chan."
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO :\017 Partie démarrée sur \00302$chan\017."
+  set msg1 [::msgcat::mc uno_started $chan]
+  puts [stripmirc $msg1]
+  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$msg1"
   unomsg "[unoad] \00304\[\00310$nick\00304\]\003"
   set UnoOn 1
   Uno_WriteCFG
-  #UnoBindCmds
   UnoNext
   return
 }
@@ -250,7 +252,7 @@ proc UnoNext {} {
   }
   if [info exist UnoHand] {unset UnoHand}
   if [info exist NickColor] {unset NickColor}
-  unomsg "[unoad]\003 \00300,12Tapez jo pour rejoindre la partie ! Vous avez $StartGracePeriod secondes. \003"
+  unomsg [::msgcat::mc uno_pubjoin [unoad] $StartGracePeriod]
   set UnoStartTimer [after [expr {int($StartGracePeriod * 1000)}] UnoStart]
   if {$Debug == 1 } { puts "[after info]" }
   return
@@ -265,10 +267,10 @@ proc UnoStart {} {
   global mysock
   if {$UnoOn == 0} {return}
   if {[llength $RoundRobin] == 0} {
-    unomsg "[unoad] \00300,03Aucun joueur, prochain jeu dans $UnoCycleTime secondes. \003"
+    unomsg [::msgcat::mc uno_noplayers $UnoCycleTime [unoad]]
     incr UnPlayedRounds
     if {($UnoStopAfter > 0)&&($UnPlayedRounds >= $UnoStopAfter)} {
-      unomsg "[unoad] \00300,06Partie stoppée, $UnoStopAfter tours non joués. Tapez !uno pour recommencer une partie.\003"
+      unomsg [::msgcat::mc uno_stopnoplayers [unoad] $UnoStopAfter]
       set UnoOn 0
       after 1000 "UnoStop $UnoRobot $UnoRobot none $UnoChan none"
       return
@@ -286,9 +288,10 @@ proc UnoStart {} {
     if [info exist NickColor($UnoRobot)] {unset NickColor($UnoRobot)}
     set UnoHand($UnoRobot) ""
     set NickColor($UnoRobot) [colornick $UnoPlayers]
-    unomsg "[nikclr $UnoRobot]\017 rejoint la partie [unoad]\017"
-    puts "UNO : $UnoRobot rejoint la partie."
-    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO : \00302$UnoRobot\017 rejoint la partie."
+    unomsg [::msgcat::mc uno_join0 [nikclr $UnoRobot] [unoad]]
+    set msg2 [::msgcat::mc uno_join1 $UnoRobot]
+    puts [stripmirc $msg2]
+    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$msg2"
     UnoShuffle 7
 
     while {[llength $UnoHand($UnoRobot)] != 7} {
@@ -299,8 +302,8 @@ proc UnoStart {} {
     }
     if {$Debug > 1} { unolog $UnoRobot $UnoHand($UnoRobot) }
   }
-  unomsg "\00300,06 Bienvenue dans le jeu de \003 [unoad]\003"
-  unomsg "\00300,10 \002$UnoPlayers\002 joueurs dans cette partie \00300,06 $RoundRobin \003"
+  unomsg [::msgcat::mc uno_welcome0 [unoad]]
+  unomsg [::msgcat::mc uno_welcome1 $UnoPlayers $RoundRobin]
   set UnoMode 2
   set ThisPlayer [lindex $RoundRobin 0]
 
@@ -318,7 +321,7 @@ proc UnoStart {} {
   set PlayCard $pcard
   set UnoDeck [lreplace ${UnoDeck} $pcardnum $pcardnum]
   set Card [CardColor $pcard]
-  unomsg "[nikclr $ThisPlayer]\003 commence. La première carte est $Card \017."
+  unomsg [::msgcat::mc uno_start [nikclr $ThisPlayer] $Card]
   set Card [CardColorAll $ThisPlayer]
   showcards $ThisPlayerIDX $Card
   set UnoStartTime [unixtime]
