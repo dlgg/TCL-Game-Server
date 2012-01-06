@@ -6,6 +6,16 @@
 ::msgcat::mcset en loadgame "Loading game : %s."
 ::msgcat::mcset en loadaddon "Loadding addon for Master Bot : %s."
 ::msgcat::mcset en filenotexist "Impossible to load %s. File doesn't exist."
+::msgcat::mcset en loading "Loading %s."
+::msgcat::mcset en initlink1 "Link initialisation step 1 : Creating socket to %s:%s"
+::msgcat::mcset en sockerror "Error during opening of socket : %s"
+::msgcat::mcset en days "days"
+::msgcat::mcset en hours "hours"
+::msgcat::mcset en minutes "minutes"
+::msgcat::mcset en seconds "seconds"
+::msgcat::mcset en closepls "Closing of all partylines"
+::msgcat::mcset en rehashdone "Rehash done."
+::msgcat::mcset en botjoin0 "Someone try to make %s left all channels via a join 0."
 
 # Messages for controller
 ::msgcat::mcset en cont_netconn "Network connect."
@@ -30,3 +40,4 @@
 ::msgcat::mcset en pl_auth "You are authentified !!!"
 ::msgcat::mcset en pl_nouth "You are not authentified. Please use .pass <password> to authentify yourself."
 ::msgcat::mcset en pl_loaded "PartyLine server loaded."
+::msgcat::mcset en pl_alreadyload "PartyLine is already loaded !"

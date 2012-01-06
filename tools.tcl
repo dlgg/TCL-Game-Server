@@ -29,8 +29,8 @@ proc stripmirc {arg} { return [regsub -all -- {\002|\037|\026|\003(\d{1,2})?(,\d
 # Link to IRC Network
 proc socket_connect {} {
   global mysock
-  if {$mysock(debug)==1} { puts "Initialisation du link etape 1 : Creation du socket vers $mysock(ip):$mysock(port)" }
-  if {[catch {set mysock(sock) [socket $mysock(ip) $mysock(port)]} error]} { puts "Erreur lors de l'ouverture du socket ([set error])"; return 0 }
+  if {$mysock(debug)==1} { puts [::msgcat::mc initlink1 $mysock(ip) $mysock(port)] }
+  if {[catch {set mysock(sock) [socket $mysock(ip) $mysock(port)]} error]} { puts [::msgcat::mc sockerror $error]); return 0 }
   fileevent $mysock(sock) readable [list socket_control $mysock(sock)]
   fconfigure $mysock(sock) -buffering line
   vwait mysock(wait)
@@ -55,10 +55,10 @@ proc duration {s} {
   set minutes [expr {($s / 60) % 60}]
   set seconds [expr {$s % 60}]
   set res ""
-  if {$days != 0} {append res "$days jours"}
-  if {$hours != 0} {append res "$hours heures"}
-  if {$minutes != 0} {append res " $minutes minutes"}
-  if {$seconds != 0} {append res " $seconds secondes"}
+  if {$days != 0} {append res "$days [::msgcat::mc days]"}
+  if {$hours != 0} {append res "$hours [::msgcat::mc hours]"}
+  if {$minutes != 0} {append res " $minutes [::msgcat::mc minutes]"}
+  if {$seconds != 0} {append res " $seconds [::msgcat::mc seconds]"}
   return $res
 }
 proc rand { multiplier } {
@@ -89,8 +89,8 @@ proc nodouble { var } {
 # Proc gestion du service
 proc my_rehash {} {
   global mysock
-  puts "Fermeture de toutes les partylines"
-  foreach pl $mysock(pl) { if {$mysock(debug)==1} { puts "Fermeture de la PL : $pl" }; closepl $pl "rehash" }
+  puts [::msgcat::mc closepls]
+  foreach pl $mysock(pl) { closepl $pl "rehash" }
   source config.tcl
   source tools.tcl
   source controller.tcl
@@ -101,10 +101,10 @@ proc my_rehash {} {
     if {[file exists $file]} {
       if {[catch {source $file} err]} { puts "Error loading $file \n$err" }
     } else {
-      puts "Impossible de charger $file. Le fichier n'existe pas."
+      puts [::msgcat::mc filenotexist $file]
     }
   }
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304Rehash effectué"
+  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304[::msgcat::mc rehashdone]"
 }
 
 proc fsend {sock data} {
@@ -134,7 +134,7 @@ proc bot_init { nick user host gecos } {
 proc join_chan {bot chan} {
   global mysock
   if {$chan=="0"} {
-    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :On a tenté de faire partir le robot $bot de tous les chans via un join 0."
+    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc botjoin0 $bot]"
   } else {
     if {$bot==$mysock(nick)} {
       fsend $mysock(sock) ":$bot JOIN $chan"

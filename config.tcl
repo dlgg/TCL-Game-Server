@@ -28,7 +28,7 @@ set mysock(debug) 1
 
 # Chargement des fichiers de langue
 foreach file [glob -directory lang/ *.msg] {
-  if {$mysock(debug)==1} { puts "Loading $file" }
+  if {$mysock(debug)==1} { puts [::msgcat::mc loading $file] }
   source $file
 }
 
@@ -53,7 +53,7 @@ set mysock(hub) "irc1.hebeo.fr"
 set mysock(nick) GameServer
 set mysock(username) tclsh
 set mysock(hostname) "tcl.hebeo.fr"
-set mysock(realname) "TCL Game Server Controller"
+set mysock(realname) "TCL GameServer Controller"
 set mysock(adminchan) "#Opers"
 set mysock(chanlist) "#UNO #Poker #1000Bornes #Services"
 set mysock(root) "Yume"
@@ -72,7 +72,7 @@ set mysock(version) "0.1"
 set mysock(proc-addon) ""
 set gameserver 0
 if {[info exists pl]} {
-  if {$mysock(debug)==1} { puts "La PL est déjà chargée." }
+  if {$mysock(debug)==1} { puts [::msgcat::mc pl_alreadyload] }
 } else {
   set pl 0
   set mysock(pl) ""

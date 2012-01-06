@@ -6,6 +6,16 @@
 ::msgcat::mcset fr loadgame "Chargement du jeu : %s."
 ::msgcat::mcset fr loadaddon "Chargement de l'addon pour le Master Bot : %s."
 ::msgcat::mcset fr filenotexist "Impossible de charger %s. Le fichier n'existe pas."
+::msgcat::mcset fr loading "Chargement de %s."
+::msgcat::mcset fr initlink1 "Initialisation de la liaison étape 1 : Creation du socket vers %s:%s"
+::msgcat::mcset fr sockerror "Erreur lors de l'ouverture du socket : %s"
+::msgcat::mcset fr days "jours"
+::msgcat::mcset fr hours "heures"
+::msgcat::mcset fr minutes "minutes"
+::msgcat::mcset fr seconds "secondes"
+::msgcat::mcset fr closepls "Fermeture de toutes les partylines"
+::msgcat::mcset fr rehashdone "Rehash effectué."
+::msgcat::mcset fr botjoin0 "On a tenté de faire partir le robot %s de tous les chans via un join 0."
 
 # Messages for controller
 ::msgcat::mcset fr cont_netconn "Connexion au réseau."
@@ -30,3 +40,4 @@
 ::msgcat::mcset fr pl_auth "Vous êtes authentifié !!!"
 ::msgcat::mcset fr pl_notauth "Vous n'êtes pas authentifié. Merci d'utiliser la commande .pass <password> pour vous authentifier."
 ::msgcat::mcset fr pl_loaded "Serveur de PartyLine chargé."
+::msgcat::mcset fr pl_alreadyload "La PL est déjà chargée !"
