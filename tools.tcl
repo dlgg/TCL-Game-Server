@@ -60,8 +60,8 @@ proc duration {s} {
   if {$seconds != 0} {append res " $seconds secondes"}
   return $res
 }
-proc rand {l} {
-  return [expr {int(rand()*$l)}]
+proc rand { multiplier } {
+  return [expr { int( rand() * $multiplier ) }]
 }
 
 # Gestion complémentaire de listes
