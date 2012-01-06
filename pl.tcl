@@ -52,7 +52,7 @@ proc pl_control { sockpl } {
     close $sockpl
   }
   set arg [charfilter $arg]
-  puts "<<< $sock <<< $arg"
+  puts "<<< $sockpl <<< $arg"
   puts $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00312PL <<<\002 $sockpl \002<<<\003 [join $arg]"
   
   if {$isauth==1} {
