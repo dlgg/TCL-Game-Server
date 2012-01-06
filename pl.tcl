@@ -25,25 +25,25 @@ puts [::msgcat::mc loadmodule "PartyLine"]
 proc pl_server {} {
   global mysock
   if {[catch {socket -server pl -myaddr $mysock(plip) $mysock(plport)} error]} { puts "Erreur lors de l'ouverture du socket ([set error])"; return 0 }
-  puts "Ouverture du port PL OK"
+  puts [::msgcat::mc pl_openport]
   set mysock(server) "1"
 }
 
 proc pl { sockpl addr dstport } {
   global mysock
-  puts "Arrivée d'une connexion Partyline."
+  puts [::msgcat::mc pl_incconn]
   fileevent $sockpl readable [list pl_control $sockpl]
   lappend mysock(pl) $sockpl
   set mysock(pl) [nodouble $mysock(pl)]
   fconfigure $sockpl -buffering line
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL activée :\002\003 $sockpl > $mysock(plport):$addr:$dstport"
+  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc pl_activated $sockpl $mysock(plport) $addr $dstport]"
 }
 
 proc closepl { socktoclose sockpl } {
   global mysock
   set mysock(pl) [lremove $mysock(pl) $socktoclose]
   set mysock(plauthed) [lremove $mysock(plauthed) $socktoclose]
-  set msg "Fermeture du socket PL $socktoclose par l'utilisateur $sockpl"
+  set msg [::msgcat::mc pl_close $socktoclose $sockpl]
   fsend $socktoclose $msg
   fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 $msg"
   puts $msg
@@ -64,15 +64,15 @@ proc pl_control { sockpl } {
   
   if {$isauth==1} {
     if {[lindex $arg 0]==".help"} {
-      fsend $sockpl "Aide de TCL GameService v$mysock(version)"
+      fsend $sockpl [::msgcat::mc pl_help0 $mysock(version)]
       fsend $sockpl " "
-      fsend $sockpl "Commandes partyline"
-      fsend $sockpl "-------------------"
+      fsend $sockpl [::msgcat::mc pl_help1]
+      fsend $sockpl "------------------------------"
       fsend $sockpl " "
-      fsend $sockpl ".close     Ferme votre PL ou une PL donnée en paramètre"
-      fsend $sockpl ".who       Affiche la liste des personnes en PL"
-      fsend $sockpl ".rehash    Recharge le service"
-      fsend $sockpl ".die       Tue le service"
+      fsend $sockpl ".close     [::msgcat::mc pl_help2]"
+      fsend $sockpl ".who       [::msgcat::mc pl_help3]"
+      fsend $sockpl ".rehash    [::msgcat::mc pl_help4]"
+      fsend $sockpl ".die       [::msgcat::mc pl_help5]"
     }
     if {[lindex $arg 0]==".close"} {
       if {[lindex $arg 1]==""} {
@@ -82,26 +82,26 @@ proc pl_control { sockpl } {
       }
     }
     if {[lindex $arg 0]==".who"} {
-      fsend $sockpl "Présent en PL : $mysock(pl)"
-      fsend $sockpl "Présent en PL et auth : $mysock(plauthed)"
+      fsend $sockpl [::msgcat::mc pl_inpl $mysock(pl)]
+      fsend $sockpl [::msgcat::mc pl_inplauth $mysock(plauthed)]
     }
     if {[lindex $arg 0]==".rehash"} {
       my_rehash
-      fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Rehash par la PL $sockpl"
+      fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 [::msgcat::mc pl_rehash $sockpl]"
     }
     if {[lindex $arg 0]==".die"} {
-      fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 Die par la PL $sockpl"
+      fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304\002PL :\003\002 [::msgcat::mc pl_die $sockpl]"
       foreach bot $mysock(botlist) {
-        fsend $mysock(sock) ":$bot QUIT :Coupure des services demandée par $sockpl. "
+        fsend $mysock(sock) ":$bot QUIT :[::msgcat::mc cont_shutdown $sockpl]"
       }
-      fsend $mysock(sock) "SQUIT $mysock(hub)"
+      fsend $mysock(sock) ":mysock(servername) SQUIT $mysock(hub) :[::msgcat::mc cont_shutdown $sockpl]"
       exit 0
     }
   } else {
     if {([lindex $arg 0]==".pass")&&([string equal [lindex $arg 1] $mysock(plpass)])} {
       lappend mysock(plauthed) $sockpl
       set mysock(plauthed) [nodouble $mysock(plauthed)]
-      fsend $sockpl "You are authed !!!"
+      fsend $sockpl [::msgcat::mc pl_auth]
     } elseif {[lindex $arg 0]==".close"} {
       if {[lindex $arg 1]==""} {
         closepl $sockpl $sockpl
@@ -109,10 +109,10 @@ proc pl_control { sockpl } {
         closepl [lindex $arg 1] $sockpl
       } 
     } else {
-      fsend $sockpl "You are not authed. Please use .pass <password> to auth yourself."
+      fsend $sockpl [::msgcat::mc pl_notauth]
     }
   }
 }
 
-puts "Serveur de PartyLine chargé."
+puts [::msgcat::mc pl_loaded]
 set pl 1

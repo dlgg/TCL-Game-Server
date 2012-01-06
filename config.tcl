@@ -24,10 +24,13 @@
 package require msgcat
 
 # Chargement des fichiers de langue
-::msgcat::mcload [file join [file dirname [info script]] lang]
+foreach file [glob -directory lang/ *.msg] {
+  puts "Chargement de $file"
+  source $file
+}
 
 # Setting default lang
-set mysock(lang) "en"
+set mysock(lang) "fr"
 proc set_lang {lang} { if {$lang != ""} { ::msgcat::mclocale $lang } }
 set_lang $mysock(lang)
 
