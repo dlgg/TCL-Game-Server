@@ -89,7 +89,7 @@ proc nodouble { var } {
 proc my_rehash {} {
   global mysock
   puts "Fermeture de toutes les partylines"
-  foreach pl $mysock(pl) { puts "Fermeture de la PL : $pl"; close $pl }
+  foreach pl $mysock(pl) { puts "Fermeture de la PL : $pl"; closepl $pl "rehash" }
   puts "Chargement des paramètres de configurations."
   source config.tcl
   puts "Chargement des outils."
