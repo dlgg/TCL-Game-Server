@@ -20,7 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
-puts [::msgcat::mc mc loadgame "Poker"]
+puts [::msgcat::mc loadgame "Poker"]
 
 # Parametres pour le jeu Poker
 set mysock(poker-nick) "Poker"
