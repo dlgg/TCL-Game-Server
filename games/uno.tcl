@@ -203,7 +203,7 @@ set UnoCycleTime 30
 set UnoNickColour "06 13 03 07 12 10 04 11 09 08"
 
 # Debugging info
-set Debug 0
+set Debug $mysock(debug)
 set UnoVersion "0.96.74.3"
 
 #
@@ -251,7 +251,6 @@ proc UnoNext {} {
   if [info exist UnoHand] {unset UnoHand}
   if [info exist NickColor] {unset NickColor}
   unomsg "[unoad]\003 \00300,12Tapez jo pour rejoindre la partie ! Vous avez $StartGracePeriod secondes. \003"
-  #set UnoStartTimer [utimer $StartGracePeriod UnoStart]
   set UnoStartTimer [after [expr {int($StartGracePeriod * 1000)}] UnoStart]
   if {$Debug == 1 } { puts "[after info]" }
   return
@@ -1973,7 +1972,6 @@ proc wildf {} { return " \00301,08 \002W\00300,03I \00300,04L\00300,12D \00301,0
 #
 # Channel And DCC Messages
 #
-
 proc unomsg {what} {
   global UnoChan mysock
   fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $UnoChan :$what"
@@ -1989,7 +1987,6 @@ proc unolog {who what} {
 Uno_ReadCFG
 UnoReadScores
 
-
 proc UnoAutoSkip {} { return }
 
 ###
@@ -1999,7 +1996,6 @@ return 0
 ###
 ### MARK
 ###
-# Cron Bind For Score Reset
 #bind time - "00 00 01 * *" UnoNewMonth
 
 #
@@ -2099,6 +2095,3 @@ proc UnoAutoSkip {} {
 }
 
 
-return 0
->>>    [expr int(rand()*[llength $MasterDeck])]
->>>    [after [expr {int($StartGracePeriod * 1000)}] UnoStart]
