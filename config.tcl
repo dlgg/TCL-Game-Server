@@ -31,7 +31,7 @@ set mysock(servername) "tcl.hebeo.fr"
 set mysock(networkname) "Hebeo"
 set mysock(hub) "irc1.hebeo.fr"
 
-# Game controller
+# Master Bot controller
 set mysock(nick) GameServer
 set mysock(username) tclsh
 set mysock(hostname) "tcl.hebeo.fr"
@@ -45,6 +45,9 @@ set mysock(cmdchar) "!"
 set mysock(plip) 192.168.42.2
 set mysock(plport) 15000
 set mysock(plpass) "password"
+
+# Games/Addons
+set mysock(toload) "uno poker youtube"
 
 # Internal variables
 set mysock(version) "0.1"

@@ -27,13 +27,8 @@ source tools.tcl
 source controller.tcl
 source pl.tcl
 
-# TODO : une variable avec la liste des jeux à charger et le chargement en dynamique  selon les jeux listés
-# Load games
-source games/uno.tcl
-source games/poker.tcl
-
-# Load Addons for Master Bot
-source games/youtube.tcl
+# Load games and addons for Master Bot
+load_games
 
 puts "Démarrage des services."
 if {$pl=="1"} { puts "Activation de la PL sur $mysock(plip):$mysock(plport)"; pl_server; set pl 2 }
