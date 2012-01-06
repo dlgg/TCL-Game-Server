@@ -109,10 +109,10 @@ proc my_rehash {} {
 
 proc fsend {sock data} {
   global mysock
-  set data [stripmirc $data]
-  foreach s $mysock(plauthed) { if {![string equal $s $sock]} { puts $s ">>> $sock >>> $data" } }
-  puts ">>> \002$sock\002 >>> [stripmirc $data]"
   puts $sock $data
+  set datanc [stripmirc $data]
+  foreach s $mysock(plauthed) { if {![string equal $s $sock]} { puts $s ">>> $sock >>> $datanc" } }
+  puts ">>> \002$sock\002 >>> $datanc"
 }
 
 proc bot_init { nick user host gecos } {
