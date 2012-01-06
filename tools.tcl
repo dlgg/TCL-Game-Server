@@ -87,18 +87,6 @@ proc nodouble { var } {
 }
 
 # Proc gestion du service
-proc load_games {} {
-  global mysock
-  foreach file mysock(toload) {
-    append file ".tcl"
-    if {[file exists $file]} {
-      source games/$file
-    } else {
-      puts "Impossible de charger $file. Le fichier n'existe pas."
-    } 
-  } 
-}
-
 proc my_rehash {} {
   global mysock
   puts "Fermeture de toutes les partylines"
@@ -107,7 +95,15 @@ proc my_rehash {} {
   source tools.tcl
   source controller.tcl
   source pl.tcl
-  load_games
+  foreach file $mysock(toload) {
+    append file ".tcl"
+    set file games/$file
+    if {[file exists $file]} {
+      if {[catch {source $file} err]} { puts "Error loading $file \n$err" }
+    } else {
+      puts "Impossible de charger $file. Le fichier n'existe pas."
+    }
+  }
   fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304Rehash effectué"
 }
 

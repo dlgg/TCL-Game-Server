@@ -28,7 +28,16 @@ source controller.tcl
 source pl.tcl
 
 # Load games and addons for Master Bot
-load_games
+foreach file $mysock(toload) {
+  append file ".tcl"
+  set file games/$file
+  if {[file exists $file]} {
+    if {[catch {source $file} err]} { puts "Error loading $file \n$err" }
+  } else {
+    puts "Impossible de charger $file. Le fichier n'existe pas."
+  }
+}
+
 
 puts "[::msgcat::mc startserv]"
 if {$pl=="1"} { puts "Activation de la PL sur $mysock(plip):$mysock(plport)"; pl_server; set pl 2 }
