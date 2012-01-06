@@ -29,7 +29,7 @@ proc stripmirc {arg} { return [regsub -all -- {\002|\037|\026|\003(\d{1,2})?(,\d
 # Link to IRC Network
 proc socket_connect {} {
   global mysock
-  puts "Initialisation du link etape 1 : Creation du socket vers $mysock(ip):$mysock(port)"
+  if {$mysock(debug)==1} { puts "Initialisation du link etape 1 : Creation du socket vers $mysock(ip):$mysock(port)" }
   if {[catch {set mysock(sock) [socket $mysock(ip) $mysock(port)]} error]} { puts "Erreur lors de l'ouverture du socket ([set error])"; return 0 }
   fileevent $mysock(sock) readable [list socket_control $mysock(sock)]
   fconfigure $mysock(sock) -buffering line
@@ -90,7 +90,7 @@ proc nodouble { var } {
 proc my_rehash {} {
   global mysock
   puts "Fermeture de toutes les partylines"
-  foreach pl $mysock(pl) { puts "Fermeture de la PL : $pl"; closepl $pl "rehash" }
+  foreach pl $mysock(pl) { if {$mysock(debug)==1} { puts "Fermeture de la PL : $pl" }; closepl $pl "rehash" }
   source config.tcl
   source tools.tcl
   source controller.tcl
@@ -110,9 +110,11 @@ proc my_rehash {} {
 proc fsend {sock data} {
   global mysock
   puts $sock $data
-  set datanc [stripmirc $data]
-  foreach s $mysock(plauthed) { if {![string equal $s $sock]} { puts $s ">>> $sock >>> $datanc" } }
-  puts ">>> \002$sock\002 >>> $datanc"
+  if {$mysock(debug)==1} {
+    set datanc [stripmirc $data]
+    foreach s $mysock(plauthed) { if {![string equal $s $sock]} { puts $s ">>> $sock >>> $datanc" } }
+    puts ">>> \002$sock\002 >>> $datanc"
+  }
 }
 
 proc bot_init { nick user host gecos } {
@@ -126,7 +128,7 @@ proc bot_init { nick user host gecos } {
     }
   }
   if {[info exists mysock(botlist)]} { lappend mysock(botlist) $nick } else { set mysock(botlist) $nick }
-  puts "My bots are : $mysock(botlist)"
+  if {$mysock(debug)==1} { puts "My bots are : $mysock(botlist)" }
 }
 
 proc join_chan {bot chan} {
@@ -143,14 +145,14 @@ proc join_chan {bot chan} {
     }
     lappend mysock(mychans) $chan
     set mysock(mychans) [join [nodouble $mysock(mychans)]]
-    puts "My chans are : $mysock(mychans)"
+    if {$mysock(debug)==1} { puts "My chans are : $mysock(mychans)" }
   }
 }
 
 proc game_init {} {
   global mysock
   foreach game $mysock(gamelist) {
-    puts "Load game : $game"
+    if {$mysock(debug)==1} { puts "Load game : $game" }
     bot_init $mysock($game-nick) $mysock($game-username) $mysock($game-hostname) $mysock($game-realname)
     join_chan $mysock($game-nick) $mysock($game-chan)
   }

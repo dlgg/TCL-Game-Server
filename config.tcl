@@ -23,9 +23,12 @@
 # packages needed
 package require msgcat
 
+# Debug ... or not ?
+set mysock(debug) 1
+
 # Chargement des fichiers de langue
 foreach file [glob -directory lang/ *.msg] {
-  puts "Chargement de $file"
+  if {$mysock(debug)==1} { puts "Loading $file" }
   source $file
 }
 
@@ -69,7 +72,7 @@ set mysock(version) "0.1"
 set mysock(proc-addon) ""
 set gameserver 0
 if {[info exists pl]} {
-  puts "La PL est déjà chargée."
+  if {$mysock(debug)==1} { puts "La PL est déjà chargée." }
 } else {
   set pl 0
   set mysock(pl) ""

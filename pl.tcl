@@ -59,8 +59,11 @@ proc pl_control { sockpl } {
     closepl $sockpl "system"
   }
   set arg [charfilter $arg]
-  puts "<<< $sockpl <<< $arg"
-  puts $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00312PL <<<\002 $sockpl \002<<<\003 [join $arg]"
+  if {$mysock(debug)==1} {
+    puts "<<< $sockpl <<< [join $arg]"
+    foreach s $mysock(plauthed) { if {![string equal $s $sockpl]} { puts $s ">>> $sock >>> [join $arg]" } }
+    puts $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00312PL <<<\002 $sockpl \002<<<\003 [join $arg]"
+  }
   
   if {$isauth==1} {
     if {[lindex $arg 0]==".help"} {
