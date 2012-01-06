@@ -20,6 +20,15 @@
 # Messages for controller
 ::msgcat::mcset fr cont_netconn "Connexion au réseau."
 ::msgcat::mcset fr cont_shutdown "Coupure des services démandée par %s."
+::msgcat::mcset fr cont_sockclose "Fermeture du socket"
+::msgcat::mcset fr cont_rehash "\00310Rehash par %s"
+::msgcat::mcset fr cont_source "\00310Source de %s par %s"
+::msgcat::mcset fr cont_tcl "\00310TCL\017 Execution par %s de %s"
+::msgcat::mcset fr cont_botjoin0 "\002%s\002 a tenté de me faire partir de tous les chans via un join 0."
+::msgcat::mcset fr cont_notleaveadminchan0 "Je ne peux pas partir de %s !"
+::msgcat::mcset fr cont_notleaveadminchan1 "%s a tenté de me faire partir de %s !"
+::msgcat::mcset fr cont_leavechan "%s m'a demandé de partir !"
+::msgcat::mcset fr cont_testflood "Test de flood sur IRC N° %3d"
 
 # Messages for partyline
 ::msgcat::mcset fr pl_activation "Activation de la PL sur %s:%s."

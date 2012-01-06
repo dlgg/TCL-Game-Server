@@ -20,6 +20,15 @@
 # Messages for controller
 ::msgcat::mcset en cont_netconn "Network connect."
 ::msgcat::mcset en cont_shutdown "Shutdown of services asked by %s."
+::msgcat::mcset en cont_sockclose "Closing socket"
+::msgcat::mcset en cont_rehash "\00310Rehash by %s"
+::msgcat::mcset en cont_source "\00310Source of %s by %s"
+::msgcat::mcset en cont_tcl "\00310TCL\017 Execution by %s of %s"
+::msgcat::mcset en cont_botjoin0 "\002%s\002 try to make me leave all channels via a /join 0."
+::msgcat::mcset en cont_notleaveadminchan0 "Je ne peux pas partir de %s !"
+::msgcat::mcset en cont_notleaveadminchan1 "%s tried to make me leave of channel %s !"
+::msgcat::mcset en cont_leavechan "%s ask me to leave !"
+::msgcat::mcset en cont_testflood "Flood test on IRC N° %3d"
 
 # Messages for partyline
 ::msgcat::mcset en pl_activation "Activation of partyline on %s:%s."

@@ -27,7 +27,7 @@ proc socket_control {sock} {
   global numeric
   set argv [gets $sock arg]
   if {$argv=="-1"} {
-    puts "Fermeture du socket"
+    puts [::msgcat::mc cont_sockclose]
     close $sock
     exit 0
   }
@@ -109,17 +109,16 @@ proc socket_control {sock} {
       # Commande !rehash
       if {[string equal "$mysock(cmdchar)rehash" [lindex $comm 0]]} {
         my_rehash
-        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00310Rehash par $from"
+        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc cont_rehash $from]"
       }
       if {[string equal "$mysock(cmdchar)source" [lindex $comm 0]]} {
-        my_rehash
         source $comm
-        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00310Source de $comm par $from"
+        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc cont_source $comm $from]"
       }
       if {[string equal "$mysock(cmdchar)tcl" [lindex $comm 0]]} {
         my_rehash
         $comm
-        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00310TCL\017 Execution par $from de $comm"
+        fsend $sock ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc cont_tcl $from $comm]"
       }
       # Commande !test
       if {[string equal -nocase "$mysock(cmdchar)test" [lindex $comm 0]]} {
@@ -134,7 +133,8 @@ proc socket_control {sock} {
       if {[string equal -nocase "$mysock(cmdchar)join" [lindex $comm 0]]} {
         foreach chan [lrange $comm 1 end] {
           if {$chan=="0"} {
-            fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :On a tenté de me faire partir de tous les chans via un join 0."
+            fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc cont_botjoin0 $nick]"
+            return
           }
           join_chan $mysock(nick) [join [lindex [split $chan ","] 0]]
         }
@@ -143,25 +143,25 @@ proc socket_control {sock} {
       if {[string equal -nocase "$mysock(cmdchar)part" [lindex $comm 0]]} {
         set pchan [join [string tolower [lindex $comm 1]]]
         if {$pchan==[string tolower $mysock(adminchan)]} {
-          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :Je ne peux pas partir de $pchan !"
-          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$from a tenté de me faire partir de $pchan !"
+          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :[::msgcat::mc cont_notleavedminchan0 $pchan]"
+          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcont::mc cont_notleaveadminchan1 $from $pchan]"
           return 0
         } else {
-          fsend $mysock(sock) ":$mysock(nick) PART $pchan :$from m'a demandé de partir !"
+          fsend $mysock(sock) ":$mysock(nick) PART $pchan :[::msgcat::mc cont_leavechan $from]"
         }
       }
       # Commande !die
       if {[string equal -nocase "$mysock(cmdchar)die" [lindex $comm 0]]} {
         foreach bot $mysock(botlist) {
-          fsend $mysock(sock) ":$bot QUIT :Coupure des services demandée par $from"
+          fsend $mysock(sock) ":$bot QUIT :[::msgcat::mc cont_shutdown $from]"
         }
-        fsend $mysock(sock) ":$mysock(servername) SQUIT $mysock(hub) :Coupure des services demandée par $from"
+        fsend $mysock(sock) ":$mysock(servername) SQUIT $mysock(hub) :[::msgcat::mc cont_shutdown $from]"
         exit 0
       }
       # Commande !flood
       if {[string equal -nocase "$mysock(cmdchar)flood" [lindex $comm 0]]} {
         for {set num 1} {$num < 129} {incr num} {
-          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :Test de flood sur IRC N° $num"
+          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :[::msgcat::mc cont_testflood $num]"
         }
       }
 #      # Commande !restart
