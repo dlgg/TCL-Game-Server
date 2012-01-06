@@ -20,6 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
+puts "Chargement de la partyline"
 
 proc pl_server {} {
   global mysock

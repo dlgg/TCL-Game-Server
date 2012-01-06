@@ -20,6 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
+puts "Chargement d'un Addon Master Bot : YouTube"
 
 package require http
 

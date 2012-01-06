@@ -20,6 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
+puts "Chargement du controller"
 
 proc socket_control {sock} {
   global mysock

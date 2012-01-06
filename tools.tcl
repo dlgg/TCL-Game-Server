@@ -20,6 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
+puts "Chargement des outils"
 
 # Proc for cleaning IRC strings
 proc charfilter {arg} { return [string map {"\\" "\\\\" "\{" "\\\{" "\}" "\\\}" "\[" "\\\[" "\]" "\\\]" "\'" "\\\'" "\"" "\\\""} $arg] }
@@ -90,19 +91,12 @@ proc my_rehash {} {
   global mysock
   puts "Fermeture de toutes les partylines"
   foreach pl $mysock(pl) { puts "Fermeture de la PL : $pl"; closepl $pl "rehash" }
-  puts "Chargement des paramètres de configurations."
   source config.tcl
-  puts "Chargement des outils."
   source tools.tcl
-  puts "Chargement du controller."
   source controller.tcl
-  puts "Chargement de la partyline."
   source pl.tcl
-  puts "Chargement du UNO"
   source games/uno.tcl
-  puts "Chargement du Poker"
   source games/poker.tcl
-  puts "Chargement de l'addon YouTube"
   source games/youtube.tcl
   fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304Rehash effectué"
 }

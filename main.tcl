@@ -21,22 +21,18 @@
 #
 ##############################################################################
 
-puts "Chargement des paramètres de configurations."
+# Load internal needed scripts
 source config.tcl
-puts "Chargement des outils."
 source tools.tcl
-puts "Chargement du controller."
 source controller.tcl
-puts "Chargement de la partyline."
 source pl.tcl
 
 # TODO : une variable avec la liste des jeux à charger et le chargement en dynamique  selon les jeux listés
-puts "Chargement du UNO"
+# Load games
 source games/uno.tcl
-puts "Chargement du Poker"
 source games/poker.tcl
 
-puts "Chargement de l'addon YouTube"
+# Load Addons for Master Bot
 source games/youtube.tcl
 
 puts "Démarrage des services."

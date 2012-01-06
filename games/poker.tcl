@@ -20,6 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
+puts "Chargement du jeu : Poker"
 
 # Parametres pour le jeu Poker
 set mysock(poker-nick) "Poker"
