@@ -20,7 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
-puts "Chargement du controller"
+puts [::msgcat::mc loadmodule "Master Bot Controller"]
 
 proc socket_control {sock} {
   global mysock

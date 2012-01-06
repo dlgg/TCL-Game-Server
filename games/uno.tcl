@@ -42,7 +42,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 ##############################################################################
-puts "Chargement du jeu : UNO"
+puts [::msgcat::mc loadgame "UNO"]
 
 # Parametres pour le jeu UNO
 set mysock(uno-nick) "UNO"

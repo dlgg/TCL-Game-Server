@@ -20,7 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
-puts "Chargement d'un Addon Master Bot : YouTube"
+puts [::msgcat::mc loadaddon "YouTube"]
 
 package require http
 
@@ -28,7 +28,7 @@ package require http
 lappend mysock(proc-addon) "youtube_control"
 nodouble $mysock(proc-addon)
 
-# vars for youtube
+# Vars for addon
 set youtube(logo) "\002\00301,00You\00300,04Tube\002\017"
 set youtube(base) "http://www.youtube.com"
 set youtube(agent) "Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.9.0.1) Gecko/2008070208 Firefox/3.0.1"

@@ -20,7 +20,7 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
-puts "Chargement de la partyline"
+puts [::msgcat::mc loadmodule "PartyLine"]
 
 proc pl_server {} {
   global mysock

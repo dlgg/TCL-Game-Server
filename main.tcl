@@ -30,6 +30,6 @@ source pl.tcl
 # Load games and addons for Master Bot
 load_games
 
-puts "Démarrage des services."
+puts "[::msgcat::mc startserv]"
 if {$pl=="1"} { puts "Activation de la PL sur $mysock(plip):$mysock(plport)"; pl_server; set pl 2 }
 if {$gameserver=="1"} { puts "Connexion au réseau"; socket_connect; set gameserver 2 }

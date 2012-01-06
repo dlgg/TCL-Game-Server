@@ -20,7 +20,19 @@
 # Author(s): Damien Lesgourgues
 #
 ##############################################################################
-puts "Chargement des paramètres de configuration"
+# packages needed
+package require msgcat
+
+# Chargement des fichiers de langue
+::msgcat::mcload [file join [file dirname [info script]] lang]
+
+# Setting default lang
+set mysock(lang) "en"
+proc set_lang {lang} { if {$lang != ""} { ::msgcat::mclocale $lang } }
+set_lang $mysock(lang)
+
+# Logging message
+puts [::msgcat::mc loadmodule "Configuration"]
 
 # Service configuration
 set mysock(ip) 192.168.42.4
