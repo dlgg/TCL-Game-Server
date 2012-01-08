@@ -212,18 +212,14 @@ set UnoVersion "0.96.74.3"
 #
 proc UnoInit {nick uhost hand chan arg} {
   global UnoChan UnoOn mysock
-  set msg0 [::msgcat::mc uno_unocmd $nick $chan]
-  puts [stripmirc $msg0]
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$msg0"
+  if {$mysock(debug)==1} { puts [::msgcat::mc uno_unocmd $nick $chan] }
   if {$UnoOn > 0} {
     if {$chan != $UnoChan} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $chan :[::msgcat::mc uno_startalready0 [unoad]]" }
     if {$chan == $UnoChan} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $chan :[::msgcat::mc uno_startalready1 [unoad]]" }
     return
   }
   set UnoChan $chan
-  set msg1 [::msgcat::mc uno_started $chan]
-  puts [stripmirc $msg1]
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$msg1"
+  if {$mysock(debug)==1} { puts [::msgcat::mc uno_started $chan] }
   unomsg "[unoad] \00304\[\00310$nick\00304\]\003"
   set UnoOn 1
   Uno_WriteCFG
@@ -267,7 +263,7 @@ proc UnoStart {} {
   global mysock
   if {$UnoOn == 0} {return}
   if {[llength $RoundRobin] == 0} {
-    unomsg [::msgcat::mc uno_noplayers $UnoCycleTime [unoad]]
+    unomsg [::msgcat::mc uno_noplayers [unoad] $UnoCycleTime]
     incr UnPlayedRounds
     if {($UnoStopAfter > 0)&&($UnPlayedRounds >= $UnoStopAfter)} {
       unomsg [::msgcat::mc uno_stopnoplayers [unoad] $UnoStopAfter]
@@ -289,9 +285,7 @@ proc UnoStart {} {
     set UnoHand($UnoRobot) ""
     set NickColor($UnoRobot) [colornick $UnoPlayers]
     unomsg [::msgcat::mc uno_join0 [nikclr $UnoRobot] [unoad]]
-    set msg2 [::msgcat::mc uno_join1 $UnoRobot]
-    puts [stripmirc $msg2]
-    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :$msg2"
+    if {$mysock(debug)==1} { puts [::msgcat::mc uno_join1 $UnoRobot] }
     UnoShuffle 7
 
     while {[llength $UnoHand($UnoRobot)] != 7} {
@@ -342,13 +336,11 @@ proc UnoStop {nick uhost hand chan arg} {
   catch {after cancel $UnoStartTimer}
   catch {after cancel $UnoSkipTimer}
   catch {after cancel $UnoCycleTimer}
-  unomsg "[unoad]\00306 Partie stoppée par \00304\[\00312$nick\00304\]\003"
-  puts "UNO : Partie stoppée par $nick sur $chan."
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO :\017 Partie stoppée par \00302$nick\017 sur \00302$chan\017."
+  unomsg [::msgcat::mc uno_stop0 [unoad] $nick]
+  if {$mysock(debug)==1} { puts [::msgcat::mc uno_stop1 $nick $chan] }
   set UnoOn 0
   set UnoPaused 0
   set UnPlayedRounds 0
-  #UnoUnbindCmds
   UnoReset
   return
 }
@@ -375,7 +367,7 @@ proc JoinUno {nick uhost hand chan arg} {
   global mysock
   if {($chan != $UnoChan)||($UnoMode < 1)||($UnoMode > 2)} {return}
   if {[llength $RoundRobin] == $UnoMaxPlayers} {
-    unontc $nick "Désolé $nick, le nombre maximum de joueurs est déjà atteint !"
+    unontc $nick [::msgcat::mc uno_maxplayers $nick]
     return
   }
   set pcount 0
@@ -404,10 +396,9 @@ proc JoinUno {nick uhost hand chan arg} {
     append Card [CardColor $pcard]
   }
   if {$Debug > 1} { unolog $nick $UnoHand($nick) }
-  unomsg "[nikclr $nick]\003 rejoint la partie [unoad]\003"
-  puts "UNO : $nick rejoint la partie."
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO : \00302$nick\017 rejoint la partie."
-  unontc $nick "En main : $Card"
+  unomsg [::msgcat::mc uno_pljoin0 [nikclr $nick] [unoad]]
+  puts [::msgcat::mc uno_pljoin1 $nick]
+  unontc $nick [::msgcat::mc uno_inhand $Card]
   return
 }
 
