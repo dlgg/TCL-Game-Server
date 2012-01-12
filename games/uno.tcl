@@ -42,6 +42,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 ##############################################################################
+# TODO
+#
+# - Cron system for eset of scores every month
+# - recode AutoSkipTimer system for nexting a player if it don't play in the
+#   next 2 minutes
+##############################################################################
+
 puts [::msgcat::mc loadgame "UNO"]
 
 # Parametres pour le jeu UNO
@@ -321,7 +328,7 @@ proc UnoStart {} {
   set UnoStartTime [unixtime]
 
   # Start Auto-Skip Timer
-  set UnoSkipTimer [after [expr {int($AutoSkipPeriod*1000*60)}] UnoAutoSkip]
+  ### set UnoSkipTimer [after [expr {int($AutoSkipPeriod*1000*60)}] UnoAutoSkip]
   set UnPlayedRounds 0
   return
 }
@@ -334,7 +341,7 @@ proc UnoStop {nick uhost hand chan arg} {
   global mysock
   if {$chan != $UnoChan} {return}
   catch {after cancel $UnoStartTimer}
-  catch {after cancel $UnoSkipTimer}
+  ### catch {after cancel $UnoSkipTimer}
   catch {after cancel $UnoCycleTimer}
   unomsg [::msgcat::mc uno_stop0 [unoad] $nick]
   if {$mysock(debug)==1} { puts [::msgcat::mc uno_stop1 $nick $chan] }
@@ -352,7 +359,7 @@ proc UnoCycle {} {
   global UnoOn UnoMode UnoCycleTime UnoCycleTimer UnoSkipTimer
   if {$UnoOn == 0} {return}
   set UnoMode 4
-  catch {after cancel $UnoSkipTimer}
+  ### catch {after cancel $UnoSkipTimer}
   set AdTime [expr $UnoCycleTime /2]
   set UnoAdTimer [after [expr {int($AdTime*1000)}] UnoScoreAdvertise]
   set UnoCycleTimer [after [expr {int($UnoCycleTime*1000)}] UnoNext]
@@ -1162,9 +1169,9 @@ proc UnoRobotRestart {} {
 #
 proc UnoAutoSkipReset {} {
   global AutoSkipPeriod UnoMode UnoSkipTimer
-  catch {after cancel $UnoSkipTimer}
+  ### catch {after cancel $UnoSkipTimer}
   if {$UnoMode == 2} {
-    set UnoSkipTimer [after [expr {int($AutoSkipPeriod * 1000 * 60)}] UnoAutoSkip]
+    ### set UnoSkipTimer [after [expr {int($AutoSkipPeriod * 1000 * 60)}] UnoAutoSkip]
   }
 }
 
