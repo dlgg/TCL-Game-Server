@@ -1431,7 +1431,7 @@ proc UnoTopFast {nick uhost hand chan arg} {
 proc UnoHighScore {nick uhost hand chan arg} {
   global UnoChan UnoHigh UnoPointsName
   if {$chan != $UnoChan} {return}
-  unomsg [::smgcat::mc uno_highscore [lindex [split $UnoHigh] 0] [lindex $UnoHigh 1] $UnoPointsName]
+  unomsg [::msgcat::mc uno_highscore [lindex [split $UnoHigh] 0] [lindex $UnoHigh 1] $UnoPointsName]
   return
 }
 
