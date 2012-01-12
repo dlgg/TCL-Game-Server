@@ -30,7 +30,7 @@ proc stripmirc {arg} { return [regsub -all -- {\002|\037|\026|\003(\d{1,2})?(,\d
 proc socket_connect {} {
   global mysock
   if {$mysock(debug)==1} { puts [::msgcat::mc initlink1 $mysock(ip) $mysock(port)] }
-  if {[catch {set mysock(sock) [socket $mysock(ip) $mysock(port)]} error]} { puts [::msgcat::mc sockerror $error]); return 0 }
+  if {[catch {set mysock(sock) [socket $mysock(ip) $mysock(port)]} error]} { puts [::msgcat::mc sockerror $error]); close $mysock(sock); socket_connect; return 0 }
   fileevent $mysock(sock) readable [list socket_control $mysock(sock)]
   fconfigure $mysock(sock) -buffering line
   vwait mysock(wait)

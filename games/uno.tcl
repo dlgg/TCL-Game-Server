@@ -548,7 +548,7 @@ proc UnoColorChange {nick uhost hand chan arg} {
     default { unontc $nick [::msgcat::mc uno_selectcolor]; return }
   }
   UnoNextPlayer
-  unomsg [::msgcat::mc uno_selectedcolor[nikclr $ColorPicker] $Card [nikclr $ThisPlayer]]
+  unomsg [::msgcat::mc uno_selectedcolor [nikclr $ColorPicker] $Card [nikclr $ThisPlayer]]
   set Card [CardColorAll $ThisPlayer]
   showcards $ThisPlayerIDX $Card
   set ColorPicker ""
@@ -1307,7 +1307,7 @@ proc UnoShowCards {nick uhost hand chan arg} {
       incr ccnt
     }
     if {![uno_isrobot $ThisPlayerIDX]} {
-      unontc $nick [::msgcat::mc uno_unhand $Card]
+      unontc $nick [::msgcat::mc uno_inhand $Card]
     }
   }
   return
@@ -1715,7 +1715,7 @@ proc UnoWin {winner} {
   # Winner
   unomsg [::msgcat::mc uno_endwinner $winner $cardtotals $UnoPointsName [duration $UnoTime]]
   # Card stats
-  unomsg [::msgcat::mc uno_cardstats $CardStats(played) [format "%3.1f" [get_ratio $CardStats(passed) $CardStats(drawn)]] [expr $CardStats(skips) +$CardStats(revs)] $CardStats(draws) $CardStats(wilds)]
+  unomsg [::msgcat::mc uno_cardstats $CardStats(played) [format "%3.1f" [get_ratio $CardStats(passed) $CardStats(drawn)]] [expr $CardStats(skips) + $CardStats(revs)] $CardStats(draws) $CardStats(wilds)]
   unomsg [::msgcat::mc uno_endnextgame [unoad] $UnoCycleTime]
   # Write scores
   UnoUpdateScore $winner $cardtotals
@@ -1844,7 +1844,18 @@ proc uno_isrobot {cplayerIDX} {
 }
 
 # Show played card
-proc playcard {who crd nplayer} { unomsg [::msgcat::mc uno_playcard [nikclr $who] $crd [nikclr $nplayer]] }
+proc playcard {who crd nplayer} {
+  global mysock
+  if {$mysock(debug)==1} {
+    puts "$who"
+    puts "$crd"
+    puts "$nplayer"
+    puts "-[nikclr $who]-"
+    puts "-[nikclr $nplayer]-"
+    puts "unomsg [::msgcat::mc uno_playcard [nikclr $who] $crd [nikclr $nplayer]]"
+  }
+  unomsg [::msgcat::mc uno_playcard [nikclr $who] "$crd" [nikclr $nplayer]]
+}
 # Show played draw card
 proc playdraw {who crd dplayer nplayer} { unomsg [::msgcat::mc uno_playdraw [nikclr $who] $crd [nikclr $dplayer] [nikclr $nplayer]] }
 # Show played wildcard
@@ -1852,7 +1863,7 @@ proc playwild {who chooser} { unomsg [::msgcat::mc uno_playwild [nikclr $who] [w
 # Show played wild draw four
 proc playwildfour {who skipper chooser} { unomsg [::msgcat::mc uno_playwildfour [nikclr $who] [wildf] [nikclr $skipper] [nikclr $chooser]] }
 # Show played skip card
-proc playskip {who crd skipper nplayer} { unomsg [::msgcat::mx uno_playskip [nikclr $who] $crd [nikclr $skipper] [nikclr $nplayer]] }
+proc playskip {who crd skipper nplayer} { unomsg [::msgcat::mc uno_playskip [nikclr $who] $crd [nikclr $skipper] [nikclr $nplayer]] }
 proc showwhodrew {who} { unomsg [::msgcat::mc uno_showwhodrew [nikclr $who]] }
 proc playpass {who nplayer} { unomsg [::msgcat::mc uno_playpass [nikclr $who] [nikclr $nplayer]] }
 # Show played wildcard
@@ -1958,9 +1969,9 @@ proc strpad {str len} {
 # Uno!
 proc unoad {} { return "\002\00303U\00312N\00313O\00308!" }
 # Wild Card
-proc wild {} { return " \00301,08 \002W\00300,03I \00300,04L\00300,12D\002 \003 " }
+proc wild {} { return " \00301,08 \002W\00300,03I\00300,04L\00300,12D\002 \003 " }
 # Wild Draw Four Card
-proc wildf {} { return " \00301,08 \002W\00300,03I \00300,04L\00300,12D \00301,08D\00300,03r\00300,04a\00300,12w \00301,08F\00300,03o\00300,04u\00300,12r\002 \003 " }
+proc wildf {} { return " \00301,08 \002W\00300,03I\00300,04L\00300,12D \00301,08D\00300,03r\00300,04a\00300,12w \00301,08F\00300,03o\00300,04u\00300,12r\002 \003 " }
 
 #
 # Channel And DCC Messages
