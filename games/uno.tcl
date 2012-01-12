@@ -499,7 +499,7 @@ proc UnoDraw {nick uhost hand chan arg} {
     UnoAutoSkipReset
     return
   }
-  unontc $nick "Vous avez déjà pioché une carte, jouez-la (pl) ou passez (pa)."
+  unontc $nick [::msgcat::mc uno_alreadypick]
   UnoAutoSkipReset
   return
 }
@@ -521,7 +521,7 @@ proc UnoPass {nick uhost hand chan arg} {
     showcards $ThisPlayerIDX $Card
     UnoRobotRestart
   } {
-    unontc $nick "Désolé $nick, vous ne pouvez pas passer sans avoir pioché (dr) auparavant."
+    unontc $nick [::msgcat::mc uno_pickbeforepass $nick]
   }
   return
 }
@@ -538,17 +538,17 @@ proc UnoColorChange {nick uhost hand chan arg} {
   set NewColor [string toupper [string range $arg 2 2]]
   if {$Debug == 1} {
     puts "arg : $arg"
-    puts "couleur demandée : $NewColor"
+    puts "Asked Color : $NewColor"
   }
   switch $NewColor {
-    "B" { set PlayCard "B"; set Card " \00300,12 Blue \003 "}
-    "G" { set PlayCard "G"; set Card " \00300,03 Green \003 "}
-    "Y" { set PlayCard "Y"; set Card " \00301,08 Yellow \003 "}
-    "R" { set PlayCard "R"; set Card " \00300,04 Red \003 "}
-    default { unontc $nick "Choisissez une couleur valide : \002R\002ed, \002G\002reen, \002B\002lue, ou \002Y\002ellow"; return }
+    "B" { set PlayCard "B"; set Card " \00300,12 [::msgcat::mc uno_blue] \003 "}
+    "G" { set PlayCard "G"; set Card " \00300,03 [::msgcat::mc uno_green] \003 "}
+    "Y" { set PlayCard "Y"; set Card " \00301,08 [::msgcat::mc uno_yellow] \003 "}
+    "R" { set PlayCard "R"; set Card " \00300,04 [::msgcat::mc uno_red] \003 "}
+    default { unontc $nick [::msgcat::mc uno_selectcolor]; return }
   }
   UnoNextPlayer
-  unomsg "[nikclr $ColorPicker]\003 a choisi $Card. Le jeu continue avec [nikclr $ThisPlayer].\003"
+  unomsg [::msgcat::mc uno_selectedcolor[nikclr $ColorPicker] $Card [nikclr $ThisPlayer]]
   set Card [CardColorAll $ThisPlayer]
   showcards $ThisPlayerIDX $Card
   set ColorPicker ""
@@ -835,7 +835,7 @@ proc PlayUnoNumberCard {nick pickednum crd} {
     set IsDraw 0
     return 1
   }
-  unontc $nick "Oops ! Ce n'est pas une carte valide, piochez (dr) ou jouez-en (pl) une autre."
+  unontc $nick [::msgcat::mc uno_invalidcard]
   return 0
 }
 
@@ -880,9 +880,9 @@ proc UnoPlayCard {nick uhost hand chan arg} {
   set CardInPlayerHand 0
   set pcount 0
   if {$Debug==1} {
-    puts "arg : $arg"
-    puts "main du joueur : $UnoHand($nick)"
-    puts "carde demandée : $pcard"
+    puts "arg         : $arg"
+    puts "Player hand : $UnoHand($nick)"
+    puts "Asked card  : $pcard"
   }
   while {[lindex $UnoHand($nick) $pcount] != ""} {
     if {$pcard == [lindex $UnoHand($nick) $pcount]} {
@@ -893,7 +893,7 @@ proc UnoPlayCard {nick uhost hand chan arg} {
     incr pcount
   }
   if {$CardInPlayerHand == 0} {
-    unontc $nick "Désolé, vous n'avez pas cette carte en main. Piochez (dr) ou jouez-en (pl) une autre."
+    unontc $nick [::msgcat::mc uno_notinhand]
     return
   }
   set CardFound [UnoFindCard $nick $pcardnum $pcard 0]
@@ -994,11 +994,11 @@ proc UnoPause {nick uhost hand chan arg} {
   if {[is_admin $nick]} {
     if {$UnoPaused == 0} {
       set UnoPaused 1
-      unomsg "[unoad] \00300,04 Pause par $nick. \003"
+      unomsg [::msgcat::mc uno_pauseon [unoad] $nick]
     } {
       set UnoPaused 0
       UnoAutoSkipReset
-      unomsg "[unoad] \00300,04 Reprise du jeu par $nick. \003"
+      unomsg [::msgcat::mc uno_pauseoff [unoad] $nick]
     }
   }
 }
@@ -1008,6 +1008,7 @@ proc UnoPause {nick uhost hand chan arg} {
 #
 proc UnoRemove {nick uhost hand chan arg} {
   global UnoChan UnoOn UnoCycleTime UnoIDX UnoPlayers ThisPlayer ThisPlayerIDX RoundRobin UnoDeck DiscardPile UnoHand IsColorChange ColorPicker NickColor
+  global mysock
   if {$chan != $UnoChan} {return}
   if {$UnoOn == 0} {return}
   regsub -all \[`,.!{}] $arg "" arg
@@ -1036,26 +1037,26 @@ proc UnoRemove {nick uhost hand chan arg} {
   }
   if {$PlayerFound == 1} {
     if {$UnoOpRemove > 0} {
-      unomsg "[nikclr $nick]\003 retiré de la partie par $UnoOpNick."
+      unomsg [::msgcat::mc uno_rembyop0 [nikclr $nick] $UnoOpNick]
     } {
-      unontc $nick "Vous ne participez plus à la partie."
-      unomsg "[nikclr $nick]\003 a quitté la partie."
+      unontc $nick [::msgcat::mc uno_rembyop1]
+      unomsg [::msgcat::mc uno_rembyop2 [nikclr $nick]]
     }
     # Player Was ColorPicker
     if {$IsColorChange == 1} {
       if {$nick == $ColorPicker} {
         # Make A Color Choice
         set cip [UnoPickAColor]
-        unomsg "[nikclr $nick]\003 devait choisir une couleur : sélection aléatoire de $cip."
+        unomsg [::msgcat::mc uno_shouldclrchg [nikclr $nick] $cip]
         set IsColorChange 0
       } {
-        unolog "uno" "UnoRemove: IsColorChange Set but $nick not ColorPicker"
+        if {$mysock(debug)==1} { puts "UnoRemove: IsColorChange Set but $nick not ColorPicker" }
       }
     }
     if {$nick == $ThisPlayer} {
       UnoNextPlayer
       if {$UnoPlayers > 2} {
-        unomsg "[nikclr $nick]\003 a joué, au tour de [nikclr $ThisPlayer].\003"
+        unomsg [::msgcat::mc uno_removenext [nikclr $nick] [nikclr $ThisPlayer] "%s\017 a joué, au tour de %s."
       }
       UnoAutoSkipReset
     }
@@ -1088,7 +1089,7 @@ proc UnoRemove {nick uhost hand chan arg} {
     return
   }
   if {$UnoPlayers == 0} {
-    unomsg "[unoad] \0030,10Aucun joueur, aucun gagnant. \003"
+    unomsg [::msgcat::mc uno_nowin [unoad]]
     UnoCycle
   }
   return
@@ -1112,10 +1113,10 @@ proc UnoPickAColor {} {
   set ucolors "r g b y"
   set pcol [string tolower [lindex $ucolors [expr {int(rand() * [llength $ucolors])}]]]
   switch $pcol {
-    "r" {set PlayCard "R"; return "\00300,04 Red \003"}
-    "g" {set PlayCard "G"; return "\00300,03 Green \003"}
-    "b" {set PlayCard "B"; return "\00300,12 Blue \003"}
-    "y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
+    "r" {set PlayCard "R"; return "\00300,04 [::msgcat::mc uno_red] \003"}
+    "g" {set PlayCard "G"; return "\00300,03 [::msgcat::mc uno_green] \003"}
+    "b" {set PlayCard "B"; return "\00300,12 [::msgcat::mc uno_blue] \003"}
+    "y" {set PlayCard "Y"; return "\00301,08 [::msgcat::mc uno_yellow] \003"}
   }
 }
 
@@ -1129,20 +1130,20 @@ proc UnoBotPickAColor {} {
   while {$CardCount < [llength $UnoHand($ThisPlayer)]} {
     set thiscolor [string range [lindex $UnoHand($ThisPlayer) $CardCount] 0 0]
     switch $thiscolor {
-      "R" {set PlayCard "R"; return "\00300,04 Red \003"}
-      "G" {set PlayCard "G"; return "\00300,03 Green \003"}
-      "B" {set PlayCard "B"; return "\00300,12 Blue \003"}
-      "Y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
+      "R" {set PlayCard "R"; return "\00300,04 [::msgcat::mc uno_red] \003"}
+      "G" {set PlayCard "G"; return "\00300,03 [::msgcat::mc uno_green] \003"}
+      "B" {set PlayCard "B"; return "\00300,12 [::msgcat::mc uno_blue] \003"}
+      "Y" {set PlayCard "Y"; return "\00301,08 [::msgcat::mc uno_yellow] \003"}
     }
     incr CardCount
   }
   set ucolors "r g b y"
   set pcol [string tolower [lindex $ucolors [expr {int(rand() * [llength $ucolors])}]]]
   switch $pcol {
-    "r" {set PlayCard "R"; return "\00300,04 Red \003"}
-    "g" {set PlayCard "G"; return "\00300,03 Green \003"}
-    "b" {set PlayCard "B"; return "\00300,12 Blue \003"}
-    "y" {set PlayCard "Y"; return "\00301,08 Yellow \003"}
+    "r" {set PlayCard "R"; return "\00300,04 [::msgcat::mc uno_red] \003"}
+    "g" {set PlayCard "G"; return "\00300,03 [::msgcat::mc uno_green] \003"}
+    "b" {set PlayCard "B"; return "\00300,12 [::msgcat::mc uno_blue] \003"}
+    "y" {set PlayCard "Y"; return "\00301,08 [::msgcat::mc uno_yellow] \003"}
   }
 }
 
@@ -1277,7 +1278,7 @@ proc UnoReadScores {} {
 proc UnoOrder {nick uhost hand chan arg} {
   global UnoChan UnoMode UnoPlayers RoundRobin
   if {($chan != $UnoChan)||($UnoMode < 2)} {return}
-  unomsg "\00300,10 Ordre des joueurs \[$UnoPlayers\]: \00300,06 $RoundRobin "
+  unomsg [::msgcat::mc uno_order $UnoPlayers $RoundRobin]
   return
 }
 
@@ -1287,8 +1288,7 @@ proc UnoOrder {nick uhost hand chan arg} {
 proc UnoTime {nick uhost hand chan arg} {
   global UnoChan UnoMode
   if {($chan != $UnoChan)||($UnoMode != 2)} {return}
-  set unotime "\00300,10 Temps de jeu : \00300,06 [duration [game_time]] \003"
-  unomsg "$unotime"
+  unomsg [::msgcat::mc uno_duration [duration [game_time]]
   return
 }
 
@@ -1307,7 +1307,7 @@ proc UnoShowCards {nick uhost hand chan arg} {
       incr ccnt
     }
     if {![uno_isrobot $ThisPlayerIDX]} {
-      unontc $nick "En main : $Card\003"
+      unontc $nick [::msgcat::mc uno_unhand $Card]
     }
   }
   return
@@ -1320,8 +1320,7 @@ proc UnoTurn {nick uhost hand chan arg} {
   global UnoChan UnoMode ThisPlayer RoundRobin UnoMode
   if {($chan != $UnoChan)||($UnoMode != 2)} {return}
   if {[llength $RoundRobin] < 1 } {return}
-  set info "\00300,10 Au tour de : \00300,06 $ThisPlayer. \003"
-  unomsg "$info"
+  unomsg [::msgcat::mc uno_currpl $ThisPlayer]
   return
 }
 
@@ -1333,7 +1332,7 @@ proc UnoTopCard {nick uhost hand chan arg} {
   if {($chan != $UnoChan)||($UnoMode != 2)} {return}
   set pcard $PlayCard
   set Card [CardColor $pcard]
-  unomsg "\00300,10 Carte en jeu : \003 $Card \003"
+  unomsg [::msgcat::mc uno_ingamecard $Card]
   return
 }
 
@@ -1343,9 +1342,7 @@ proc UnoTopCard {nick uhost hand chan arg} {
 proc UnoCardStats {nick uhost hand chan arg} {
   global UnoChan UnoMode CardStats
   if {($chan != $UnoChan)||($UnoMode != 2)} {return}
-  set passdraw [format "%3.1f" [get_ratio $CardStats(passed) $CardStats(drawn)]]
-  set skiprev [expr $CardStats(skips) +$CardStats(revs)]
-  unomsg "\00300,10 Statistiques des cartes : \00300,06 Jouées : $CardStats(played)  Ratio Passe\/Pioche : $passdraw\%  Skip\/Rev : $skiprev  DrawCards : $CardStats(draws)  WildCards : $CardStats(wilds) \003"
+  unomsg [::msgcat::mc uno_cardstats $CardStats(played) [format "%3.1f" [get_ratio $CardStats(passed) $CardStats(drawn)]] [expr $CardStats(skips) +$CardStats(revs)] $CardStats(draws) $CardStats(wilds)] 
   return
 }
 
@@ -1358,10 +1355,10 @@ proc UnoCount {nick uhost hand chan arg} {
   set ordcnt 0
   set crdcnt ""
   while {[lindex $RoundRobin $ordcnt] != ""} {
-    append crdcnt "\00300,10 [lindex $RoundRobin $ordcnt] \00300,06 [llength $UnoHand([lindex $RoundRobin $ordcnt])] cartes "
+    append crdcnt "[::msgcat::mc uno_count [lindex $RoundRobin $ordcnt] [llength $UnoHand([lindex $RoundRobin $ordcnt])]] "
     incr ordcnt
   }
-  unomsg "$crdcnt\003"
+  unomsg "$crdcnt"
   return
 }
 
@@ -1378,13 +1375,13 @@ proc UnoWon {nick uhost hand chan arg} {
   while {[gets $f sc] != -1} {
     set cnick [string tolower [lindex [split $sc] 0]]
     if {$cnick == $scorer} {
-      set pmsg "\00300,10 [lindex [split $sc] 0] \00300,06 [lindex $sc 2] $UnoPointsName en [lindex $sc 1] parties \003"
+      set pmsg [::msgcat::mc uno_won [lindex [split $sc] 0] [lindex $sc 2] $UnoPointsName [lindex $sc 1]]
       set pflag 1
     }
   }
   close $f
   if {$pflag == 0} {
-    set pmsg "\00300,10 $arg \00300,06 Aucun score \003"
+    set pmsg [::msgcat::mc uno_wonnoscore $arg]
   }
   unomsg "$pmsg"
   return
@@ -1424,7 +1421,7 @@ proc UnoTopThreeLast {nick uhost hand chan arg} {
 proc UnoTopFast {nick uhost hand chan arg} {
   global UnoChan UnoFast
   if {$chan != $UnoChan} {return}
-  unomsg "\00300,06La partie la plus rapide du mois : \00300,10 [lindex [split $UnoFast] 0] [duration [lindex $UnoFast 1]] \003"
+  unomsg [::msgcat::mc uno_topfast [lindex [split $UnoFast] 0] [duration [lindex $UnoFast 1]]]
   return
 }
 
@@ -1434,7 +1431,7 @@ proc UnoTopFast {nick uhost hand chan arg} {
 proc UnoHighScore {nick uhost hand chan arg} {
   global UnoChan UnoHigh UnoPointsName
   if {$chan != $UnoChan} {return}
-  unomsg "\00300,06Le meilleur score du mois : \00300,10 [lindex [split $UnoHigh] 0] [lindex $UnoHigh 1] $UnoPointsName \003"
+  unomsg [::smgcat::mc uno_highscore [lindex [split $UnoHigh] 0] [lindex $UnoHigh 1] $UnoPointsName]
   return
 }
 
@@ -1444,7 +1441,7 @@ proc UnoHighScore {nick uhost hand chan arg} {
 proc UnoPlayed {nick uhost hand chan arg} {
   global UnoChan UnoPlayed
   if {$chan != $UnoChan} {return}
-  unomsg "\00300,06Le plus grand nombre de cartes jouées du mois : \00300,10 [lindex [split $UnoPlayed] 0] [lindex $UnoPlayed 1] cartes \003"
+  unomsg [::msgcat::mc uno_played [lindex [split $UnoPlayed] 0] [lindex $UnoPlayed 1]]
   return
 }
 
@@ -1454,7 +1451,7 @@ proc UnoPlayed {nick uhost hand chan arg} {
 proc UnoRecords {nick uhost hand chan arg} {
   global UnoChan UnoRecordFast UnoRecordHigh UnoRecordCard UnoRecordWins UnoRecordPlayed
   if {$chan != $UnoChan} {return}
-  unomsg "\00300,06Records globaux : Points \00300,10 $UnoRecordCard \00300,06 Parties \00300,10 $UnoRecordWins \00300,06 Rapide \00300,10 [lindex $UnoRecordFast 0] [duration [lindex $UnoRecordFast 1]] \00300,06 Meilleur Score \00300,10 $UnoRecordHigh \00300,06 Cartes Jouées \00300,10 $UnoRecordPlayed \003"
+  unomsg [::msgcat::mc uno_records $UnoRecordCard $UnoRecordWins [lindex $UnoRecordFast 0] [duration [lindex $UnoRecordFast 1]] $UnoRecordHigh $UnoRecordPlayed]
   return
 }
 
@@ -1465,13 +1462,13 @@ proc UnoTop10 {mode} {
   global UnoScoreFile unsortedscores UnoPointsName UnoRobot
   if {($mode < 0)||($mode > 1)} {set mode 0}
   switch $mode {
-    0 {set winners "\00300,06 Top10 Gagnants "}
-    1 {set winners "\00300,06 Top10 $UnoPointsName "}
+    0 {set winners [::msgcat::mc uno_topten0]}
+    1 {set winners [::msgcat::mc uno_topten1]}
   }
   if ![file exists $UnoScoreFile] {
     set f [open $UnoScoreFile w]
     puts $f "$UnoRobot 0 0"
-    unomsg "\00300,10Le fichier des scores est vide.\003"
+    unomsg [::msgcat::mc uno_emptyscorefile]
     close $f
     return
   }
@@ -1486,7 +1483,7 @@ proc UnoTop10 {mode} {
   }
   close $f
   for {set s 0} {$s < 10} {incr s} {
-    set top10($s) "Personne 0"
+    set top10($s) "[::msgcat::mc uno_nobody] 0"
   }
   set s 0
   foreach n [lsort -decreasing -command UnoSortScores [array names unsortedscores]] {
@@ -1497,10 +1494,10 @@ proc UnoTop10 {mode} {
     if {[lindex $top10($s) 1] > 0} {
       append winners "\00300,06 #[expr $s +1] \00300,10 [lindex [split $top10($s)] 0] [lindex $top10($s) 1] "
     } {
-      append winners "\00300,06 #[expr $s +1] \00300,10 Personne 0 "
+      append winners "\00300,06 #[expr $s +1] \00300,10 [::msgcat::mc uno_nobody] 0 "
     }
   }
-  unomsg "$winners\003"
+  unomsg "$winners"
   return
 }
 
@@ -1510,23 +1507,23 @@ proc UnoTop10 {mode} {
 proc UnoLastMonthTop3 {nick uhost hand chan arg} {
   global UnoChan UnoLastMonthCards UnoLastMonthGames UnoPointsName
   if {$chan != $UnoChan} {return}
+  set UnoTop3 " "
   if {$arg == 0} {
     if [info exists UnoLastMonthCards] {
-      set UnoTop3 "\00300,06 Top 3 du mois dernier : $UnoPointsName gagnés "
+      set UnoTop3 "[::msgcat::mc uno_top3cards $UnoPointsName] "
       for { set s 0} { $s < 3 } { incr s} {
         append UnoTop3 "\00300,06 #[expr $s +1] \00300,10 $UnoLastMonthCards($s) "
       }
-      unomsg "$UnoTop3"
     }
   } {
     if [info exists UnoLastMonthGames] {
-      set UnoTop3 "\00300,06 Top 3 du mois dernier "
+      set UnoTop3 "[::msgcat::mc uno_top3games] "
       for { set s 0} { $s < 3 } { incr s} {
         append UnoTop3 "\00300,06 #[expr $s +1] \00300,10 $UnoLastMonthGames($s) "
       }
-      unomsg "$UnoTop3"
     }
   }
+  unomsg "$UnoTop3"
 }
 
 #
@@ -1534,12 +1531,14 @@ proc UnoLastMonthTop3 {nick uhost hand chan arg} {
 #
 proc UnoCmds {nick uhost hand chan arg} {
   global UnoChan mysock
-  puts "UNO : !unocmds par $nick."
-  fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO :\017 !unocmds par \00302$nick\017."
-  unontc $nick "Uno Commandes : !uno !stop !remove \[nick\] !unowon \[nick\] !unocmds"
-  unontc $nick "Uno Stats : !unotop10 !unotop3last !unofast !unohigh !unorecords"
-  unontc $nick "Uno Cartes : jo=join (rejoindre une partie) pl=play (jouer une carte) dr=draw (piocher) pa=pass (passer) co=color (choisir une couleur)"
-  unontc $nick "Uno Jeu : ca=cards (cartes) cd=card (carte) tu=turn (au tour de) od=order (ordre des joueurs) ct=count (compte) st=stats ti=time (temps de jeu)"
+  if {$mysock(debug)==1} {
+    puts "UNO : !unocmds par $nick."
+    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00304UNO :\017 !unocmds par \00302$nick\017."
+  }
+  unontc $nick [::msgcat::mc uno_helpcmd]
+  unontc $nick [::msgcat::mc uno_helpstats]
+  unontc $nick [::msgcat::mc uno_helpcards]
+  unontc $nick [::msgcat::mc uno_helpgame]
   return
 }
 
@@ -1548,7 +1547,7 @@ proc UnoCmds {nick uhost hand chan arg} {
 #
 proc UnoVersion {nick uhost hand chan arg} {
   global UnoVersion
-  unomsg "[unoad]\003 \00300,06v$UnoVersion par Marky (Traduction par Xor)\003"
+  unomsg [::msgcat::mc uno_version [unoad] $UnoVersion]
   return
 }
 
@@ -1558,8 +1557,9 @@ proc UnoVersion {nick uhost hand chan arg} {
 proc UnoNewMonth {min hour day month year} {
   global unsortedscores unogameswon unoptswon UnoLastMonthCards UnoLastMonthGames UnoScoreFile UnoRobot
   global UnoFast UnoHigh UnoPlayed UnoRecordFast UnoRecordHigh UnoRecordPlayed UnoRecordCard UnoRecordWins
+  global mysock
   set lmonth [UnoLastMonthName $month]
-  unomsg "[unoad] \00300,04Scores du mois effacés \003"
+  unomsg [::msgcat::mc uno_erasemonth [unoad]]
   set UnoMonthFileName "$UnoScoreFile.$lmonth"
   # Read Current Scores
   UnoReadScores
@@ -1597,8 +1597,8 @@ proc UnoNewMonth {min hour day month year} {
         }
       } {
         switch $mode {
-          0 {set UnoLastMonthGames($s) "Personne 0"}
-          1 {set UnoLastMonthCards($s) "Personne 0"}
+          0 {set UnoLastMonthGames($s) "[::msgcat::mc uno_nobody] 0"}
+          1 {set UnoLastMonthCards($s) "[::msgcat::mc uno_nobody] 0"}
         }
       }
     }
@@ -1620,7 +1620,7 @@ proc UnoNewMonth {min hour day month year} {
   set f [open $UnoScoreFile w]
   puts $f "$UnoRobot 0 0"
   close $f
-  unolog "uno" "Scores du mois effacés."
+  if {$mysock(debug)==1} { puts "Month scores erased." }
   return
 }
 
@@ -1658,7 +1658,7 @@ proc UnoWin {winner} {
   set ThisPlayerIDX 0
   set needCFGWrite 0
   set UnoTime [game_time]
-  unomsg "\00300,06 Cartes restantes :\003"
+  unomsg [::msgcat::mc uno_end0]
   # Total up all player's cards
   while {$ThisPlayerIDX != [llength $RoundRobin]} {
     set Card ""
@@ -1691,7 +1691,7 @@ proc UnoWin {winner} {
   # Check high score record
   set HighScore [lindex $UnoHigh 1]
   if {$cardtotals > $HighScore} {
-    unomsg "\00300,04 $winner a battu le Meilleur Score, et gagne un bonus de $UnoBonus $UnoPointsName !\003"
+    unomsg [::msgcat::mc uno_endhighscore $winner $UnoBonus $UnoPointsName]
     set UnoHigh "$winner $cardtotals"
     incr cardtotals $UnoBonus
     set needCFGWrite 1
@@ -1699,7 +1699,7 @@ proc UnoWin {winner} {
   # Check played cards record
   set HighPlayed [lindex $UnoPlayed 1]
   if {$CardStats(played) > $HighPlayed} {
-    unomsg "\00300,04 $winner a battu le score du nombre de cartes jouées et gagne un bonus de $UnoBonus $UnoPointsName !\003"
+    unomsg [::msgcat::mc uno_endplayed $winner $UnoBonus $UnoPointsName]
     set UnoPlayed "$winner $CardStats(played)"
     incr cardtotals $UnoBonus
     set needCFGWrite 1
@@ -1707,18 +1707,16 @@ proc UnoWin {winner} {
   # Check fast game record
   set FastRecord [lindex $UnoFast 1]
   if {$UnoTime < $FastRecord} {
-    unomsg "\00300,04 $winner a battu le record de rapidité et gagne un bonus de $UnoBonus $UnoPointsName !\003"
+    unomsg [::msgcat::mc uno_endtime $winner $UnoBonus $UnoPointsName]
     incr cardtotals $UnoBonus
     set UnoFast "$winner $UnoTime"
     set needCFGWrite 1
   }
   # Winner
-  unomsg "\00300,10 $winner \00300,06 $cardtotals $UnoPointsName en [duration $UnoTime] \003"
+  unomsg [::msgcat::mc uno_endwinner $winner $cardtotals $UnoPointsName [duration $UnoTime]]
   # Card stats
-  set passdraw [format "%3.1f" [get_ratio $CardStats(passed) $CardStats(drawn)]]
-  set skiprev [expr $CardStats(skips) +$CardStats(revs)]
-  unomsg "\00300,10 Statistiques - \00300,06 Jouées : $CardStats(played)  Ratio Passe\/Pioche : $passdraw\%  Skip\/Rev : $skiprev  DrawCards : $CardStats(draws)  WildCards : $CardStats(wilds) \003"
-  unomsg "[unoad] \00300,03 Prochaine partie dans $UnoCycleTime secondes. \003"
+  unomsg [::msgcat::mc uno_cardstats $CardStats(played) [format "%3.1f" [get_ratio $CardStats(passed) $CardStats(drawn)]] [expr $CardStats(skips) +$CardStats(revs)] $CardStats(draws) $CardStats(wilds)]
+  unomsg [::msgcat::mc uno_endnextgame [unoad] $UnoCycleTime]
   # Write scores
   UnoUpdateScore $winner $cardtotals
   # Write records
@@ -1732,7 +1730,7 @@ proc UnoWin {winner} {
 proc UnoShuffle {len} {
   global UnoDeck DiscardPile
   if {[llength $UnoDeck] >= $len} { return }
-  unomsg "[unoad] \00300,04 Mélange du jeu. \003"
+  unomsg [::msgcat::mc uno_shuffle [unoad]]
   lappend DiscardPile "$UnoDeck"
   set UnoDeck ""
   set NewDeckSize [llength $DiscardPile]
@@ -1794,15 +1792,15 @@ proc CardColor {pcard} {
       }
       return $cCard
     }
-    "Y" {append cCard " \00301,08 Yellow "}
-    "R" {append cCard " \00300,04 Red "}
-    "G" {append cCard " \00300,03 Green "}
-    "B" {append cCard " \00300,12 Blue "}
+    "Y" {append cCard " \00301,08 [::msgcat::mc uno_yellow] "}
+    "R" {append cCard " \00300,04 [::msgcat::mc uno_red] "}
+    "G" {append cCard " \00300,03 [::msgcat::mc uno_green] "}
+    "B" {append cCard " \00300,12 [::msgcat::mc uno_blue] "}
   }
   switch $c2 {
-    "S" {append cCard "\002Skip\002 \003 "}
-    "R" {append cCard "\002Reverse\002 \003 "}
-    "D" {append cCard "\002Draw Two\002 \003 "}
+    "S" {append cCard "\002[::msgcat::mc uno_skip]\002 \003 "}
+    "R" {append cCard "\002[::msgcat::mc uno_reverse]\002 \003 "}
+    "D" {append cCard "\002[::msgcat::mc uno_drawtwo]\002 \003 "}
     default {append cCard "$c2 \003 "}
   }
   return $cCard
@@ -1846,33 +1844,34 @@ proc uno_isrobot {cplayerIDX} {
 }
 
 # Show played card
-proc playcard {who crd nplayer} { unomsg "[nikclr $who]\003 joue $crd, \003au tour de [nikclr $nplayer].\003" }
+proc playcard {who crd nplayer} { unomsg [::msgcat::mc uno_playcard [nikclr $who] $crd [nikclr $nplayer]] }
 # Show played draw card
-proc playdraw {who crd dplayer nplayer} { unomsg "[nikclr $who]\003 joue $crd, [nikclr $dplayer]\003 pioche \002deux cartes\002 et passe son tour. Au tour de [nikclr $nplayer].\003" }
+proc playdraw {who crd dplayer nplayer} { unomsg [::msgcat::mc uno_playdraw [nikclr $who] $crd [nikclr $dplayer] [nikclr $nplayer]] }
 # Show played wildcard
-proc playwild {who chooser} { unomsg "[nikclr $who]\003 joue [wild]. Choisissez une couleur [nikclr $chooser].\003" }
+proc playwild {who chooser} { unomsg [::msgcat::mc uno_playwild [nikclr $who] [wild] [nikclr $chooser]] }
 # Show played wild draw four
-proc playwildfour {who skipper chooser} { unomsg "[nikclr $who]\003 joue [wildf], [nikclr $skipper]\003 pioche \002quatre cartes\002 et passe son tour. Choisissez une couleur [nikclr $chooser].\003" }
+proc playwildfour {who skipper chooser} { unomsg [::msgcat::mc uno_playwildfour [nikclr $who] [wildf] [nikclr $skipper] [nikclr $chooser]] }
 # Show played skip card
-proc playskip {who crd skipper nplayer} { unomsg "[nikclr $who]\003 joue $crd\003 et passe le tour de [nikclr $skipper].\003 Au tour de [nikclr $nplayer].\003" }
-proc showwhodrew {who} { unomsg "[nikclr $who]\003 \002pioche\002 une carte." }
-proc playpass {who nplayer} { unomsg "[nikclr $who]\003 \002passe\002 son tour. Au tour de [nikclr $nplayer].\003" }
-proc botplaywild {who chooser ncolr nplayer} { unomsg "[nikclr $who]\003 joue [wild] et choisit $ncolr. \003Au tour de : [nikclr $nplayer].\003" }
+proc playskip {who crd skipper nplayer} { unomsg [::msgcat::mx uno_playskip [nikclr $who] $crd [nikclr $skipper] [nikclr $nplayer]] }
+proc showwhodrew {who} { unomsg [::msgcat::mc uno_showwhodrew [nikclr $who]] }
+proc playpass {who nplayer} { unomsg [::msgcat::mc uno_playpass [nikclr $who] [nikclr $nplayer]] }
+# Show played wildcard
+proc botplaywild {who chooser ncolr nplayer} { unomsg [::msgcat::mc uno_botplaywild [nikclr $who] [wild] $ncolr [nikclr $nplayer]] }
 # Show played wild draw four
-proc botplaywildfour {who skipper chooser choice nplayer} { unomsg "[nikclr $who]\003 joue [wildf], [nikclr $skipper]\003 pioche \002quatre cartes\002 et passe son tour. [nikclr $chooser]\003 choisit $choice.\003 Au tour de : [nikclr $nplayer].\003" }
+proc botplaywildfour {who skipper chooser choice nplayer} { unomsg [::msgcat::mc uno_botplaywildfour [nikclr $who] [wildf] [nikclr $skipper] [nikclr $chooser] $choice [nikclr $nplayer]] }
 # Show a player what they drew
 proc showdraw {idx crd} {
   global UnoIDX
   if {[uno_isrobot $idx]} {return}
-  unontc [lindex $UnoIDX $idx] "Pioche : $crd"
+  unontc [lindex $UnoIDX $idx] [::msgcat::mc uno_draw $crd]
 }
 
 # Show Win
-proc showwin {who crd} { unomsg "[nikclr $who]\003 joue $crd \003et \002G\00309A\00312G\00313N\00307E\002 [unoad]\003" }
+proc showwin {who crd} { unomsg [::msgcat::mc uno_showwin [nikclr $who] $crd [unoad]] }
 # Show Win by default
-proc showwindefault {who} { unomsg "[nikclr $who] \002G\00309A\00312G\00313N\00307E\002 [unoad]\002\003 par défaut \003" }
+proc showwindefault {who} { unomsg [::msgcat::mc uno_showwindefault [nikclr $who] [unoad]] }
 # Player Has Uno
-proc hasuno {who} { global UnoChan mysock; fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $UnoChan :\001ACTION [nikclr $who] \002\00309d\00312i\00313t \00309U\00312n\00313o\00308 ! \017\001" }
+proc hasuno {who} { global UnoChan mysock; fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $UnoChan :\001ACTION [::msgcat::mc uno_hasuno [nikclr $who]]\001" }
 
 
 #
@@ -1998,13 +1997,14 @@ return 0
 proc UnoAutoSkip {} {
   global UnoMode ThisPlayer ThisPlayerIDX RoundRobin AutoSkipPeriod IsColorChange ColorPicker
   global UnoIDX UnoPlayers UnoDeck UnoHand UnoChan UnoSkipTimer Debug NickColor UnoPaused
+  global mysock
   if {$UnoMode != 2} {return}
   if {$UnoPaused != 0} {return}
   if {[uno_isrobot $ThisPlayerIDX]} {return}
   set Idler $ThisPlayer
   set IdlerIDX $ThisPlayerIDX
   if {[unotimerexists UnoSkipTimer] != ""} {
-    unolog "uno" "AutoSkip Timer existe déjà"
+    if {$mysock(debug)==1} { puts "AutoSkip Timer already exists." }
     return
   }
   set InChannel 0
@@ -2018,19 +2018,19 @@ proc UnoAutoSkip {} {
     incr pcount
   }
   if {$InChannel == 0} {
-    unomsg "[nikclr $Idler]\003 a quitté le salon, et est retiré de la partie.\003"
+    unomsg [::msgcat::mc uno_plhasleft [nikclr $Idler]]
     if {$IsColorChange == 1} {
       if {$Idler == $ColorPicker} {
         # Make A Color Choice
         set cip [UnoPickAColor]
-        unomsg "\00300,13 $Idler \003devait choisir une couleur : sélection aléatoire de $cip. \003"
+        unomsg [::msgcat::mc uno_shouldclrchg $Idler $cip]
         set IsColorChange 0
       } {
-        unolog "uno" "UnoAutoRemove: IsColorChange set but $Idler not ColorPicker"
+        if {$mysock(debug)==1} { puts "UnoAutoRemove: IsColorChange set but $Idler not ColorPicker" }
       }
     }
     UnoNextPlayer
-    unomsg "[nikclr $Idler]\003 a joué, au tour de [nikclr $ThisPlayer].\003"
+    unomsg [::msgcat::mc uno_removenext [nikclr $Idler] [nikclr $ThisPlayer]]
     if {![uno_isrobot $ThisPlayerIDX]} {
       set Card [CardColorAll $ThisPlayer]
       showcards $ThisPlayerIDX $Card
@@ -2051,7 +2051,7 @@ proc UnoAutoSkip {} {
          UnoCycle
        }
      0 {
-         unomsg "[unoad] \00300,10Aucun joueur, aucun gagnant ! \003"
+         unomsg [::msgcat::mc uno_nowin [unoad]]
          UnoCycle
        }
      default {
@@ -2063,21 +2063,21 @@ proc UnoAutoSkip {} {
     }
     return
   }
-  if {$Debug > 0} {unolog "uno" "AutoSkip Player: $Idler"}
-  unomsg "[nikclr $Idler]\003 a un idle de \00313$AutoSkipPeriod \003minutes : son tour est sauté."
+  if {$mysock(debug)==1} { puts "AutoSkip Player: $Idler" }
+  unomsg [::msgcat::mc uno_idleplayer [nikclr $Idler] $AutoSkipPeriod]
   # Player Was ColorPicker
   if {$IsColorChange == 1} {
     if {$Idler == $ColorPicker} {
       # Make A Color Choice
       set cip [UnoPickAColor]
-      unomsg "[nikclr $Idler]\003 devait choisir une couleur : sélection aléatoire de $cip."
+      unomsg [::msgcat::mc uno_shouldclrchg [nikclr $Idler] $cip]
       set IsColorChange 0
     } {
-      unolog "uno" "UnoRemove: IsColorChange set but $Idler not ColorPicker"
+      if {$mysock(debug)==1} { puts "UnoAutoRemove: IsColorChange set but $Idler not ColorPicker" }
     }
   }
   UnoNextPlayer
-  unomsg "[nikclr $Idler]\003 a joué, au tour de [nikclr $ThisPlayer].\003"
+  unomsg [::msgcat::mc uno_removenext [nikclr $Idler] [nikclr $ThisPlayer]]
   if {![uno_isrobot $ThisPlayerIDX]} {
     set Card [CardColorAll $ThisPlayer]
     showcards $ThisPlayerIDX $Card
@@ -2087,5 +2087,4 @@ proc UnoAutoSkip {} {
   UnoAutoSkipReset
   return
 }
-
 
