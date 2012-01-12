@@ -32,7 +32,7 @@ set mysock(poker-chan) "#Poker"
 # Don't modify this
 lappend mysock(gamelist) "poker"
 nodouble $mysock(gamelist)
-set mysock(users-$mysock(poker-chan)) ""
+if {![info exists mysock(users-[string tolower $mysock(poker-chan)])]} { set mysock(users-[string tolower $mysock(poker-chan)]) "" }
 set mysock(proc-[string tolower $mysock(poker-chan)]) "poker_control_pub"
 set mysock(proc-[string tolower $mysock(poker-nick)]) "poker_control_priv"
 

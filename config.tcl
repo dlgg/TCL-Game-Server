@@ -54,8 +54,8 @@ set mysock(nick) GameServer
 set mysock(username) tclsh
 set mysock(hostname) "tcl.hebeo.fr"
 set mysock(realname) "TCL GameServer Controller"
-set mysock(adminchan) "#Opers"
-set mysock(chanlist) "#UNO #Poker #1000Bornes #Services"
+set mysock(adminchan) "#Services"
+set mysock(chanlist) "#UNO #Poker #1000Bornes #opers"
 set mysock(root) "Yume"
 set mysock(cmdchar) "!"
 
@@ -84,6 +84,6 @@ set mysock(mychans) $mysock(adminchan)
 set mysock(gamelist) ""
 
 # Variables for userlists
-set mysock(users-$mysock(adminchan)) ""
-foreach chan $mysock(chanlist) { set mysock(users-$chan) "" }
+set mysock(users-[string tolower $mysock(adminchan)]) ""
+foreach chan [string tolower $mysock(chanlist)] { set mysock(users-$chan) "" }
 

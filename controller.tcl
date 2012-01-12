@@ -59,9 +59,10 @@ proc socket_control {sock} {
   if {[lindex $arg 1]=="JOIN"} {
     set nick [string range [lindex $arg 0] 1 end]
     set chans [join [split [lindex $arg 2] ,]]
-    foreach chan $chans {
+    foreach chan [string tolower $chans] {
       if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
         lappend $mysock(users-$chan) $nick
+        set mysock(users-$chan) [nodouble $mysock(users-$chan)]
       }
       if {[info exists mysock(join-[string tolower $chan])]} {
         $mysock(join-[string tolower $chan]) $nick
@@ -72,9 +73,10 @@ proc socket_control {sock} {
   if {[lindex $arg 1]=="SJOIN"} {
     set nick [string range [lindex $arg 4] 1 end]
     set chans [join [split [lindex $arg 3] ,]]
-    foreach chan $chans {
+    foreach chan [string tolower $chans] {
       if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
         lappend $mysock(users-$chan) $nick
+        set mysock(users-$chan) [nodouble $mysock(users-$chan)]
       }
       if {[info exists mysock(join-[string tolower $chan])]} {
         $mysock(join-[string tolower $chan]) $nick
