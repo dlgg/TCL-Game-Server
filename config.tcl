@@ -60,7 +60,7 @@ set mysock(root) "Yume"
 set mysock(cmdchar) "!"
 
 # Partyline configuration
-set mysock(plip) 192.168.42.2
+set mysock(plip) 0.0.0.0
 set mysock(plport) 15000
 set mysock(plpass) "password"
 

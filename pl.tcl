@@ -22,6 +22,8 @@
 ##############################################################################
 puts [::msgcat::mc loadmodule "PartyLine"]
 
+set mysock(plprotcmd) ".pass .close"
+
 proc pl_server {} {
   global mysock
   if {[catch {socket -server pl -myaddr $mysock(plip) $mysock(plport)} error]} { puts "Erreur lors de l'ouverture du socket ([set error])"; return 0 }
@@ -60,9 +62,13 @@ proc pl_control { sockpl } {
   }
   set arg [charfilter $arg]
   if {$mysock(debug)==1} {
-    puts "<<< $sockpl <<< [join $arg]"
-    foreach s $mysock(plauthed) { if {![string equal $s $sockpl]} { puts $s ">>> $sock >>> [join $arg]" } }
-    puts $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00312PL <<<\002 $sockpl \002<<<\003 [join $arg]"
+    set protected 0
+    foreach protcmd $mysock(plprotcmd) { if {[string tolower $protcmd]==[string tolower [lindex $arg 0]]} { set protected 1 } }
+    if {$protected==0} {
+      puts "<<< $sockpl <<< [join $arg]"
+      foreach s $mysock(plauthed) { if {![string equal $s $sockpl]} { puts $s ">>> $sock >>> [join $arg]" } }
+      puts $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :\00312PL <<<\002 $sockpl \002<<<\003 [join $arg]"
+    }
   }
   
   if {$isauth==1} {
@@ -97,14 +103,22 @@ proc pl_control { sockpl } {
       foreach bot $mysock(botlist) {
         fsend $mysock(sock) ":$bot QUIT :[::msgcat::mc cont_shutdown $sockpl]"
       }
-      fsend $mysock(sock) ":mysock(servername) SQUIT $mysock(hub) :[::msgcat::mc cont_shutdown $sockpl]"
+      fsend $mysock(sock) ":$mysock(servername) SQUIT $mysock(hub) :[::msgcat::mc cont_shutdown $sockpl]"
       exit 0
     }
   } else {
-    if {([lindex $arg 0]==".pass")&&([string equal [lindex $arg 1] $mysock(plpass)])} {
-      lappend mysock(plauthed) $sockpl
-      set mysock(plauthed) [nodouble $mysock(plauthed)]
-      fsend $sockpl [::msgcat::mc pl_auth]
+    if {([lindex $arg 0]==".pass")} {
+      if {([string equal [lindex $arg 1] $mysock(plpass)])} {
+        lappend mysock(plauthed) $sockpl
+        set mysock(plauthed) [nodouble $mysock(plauthed)]
+        fsend $sockpl [::msgcat::mc pl_auth0]
+        fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc pl_auth1 $sockpl]"
+        foreach s $mysock(plauthed) { if {![string equal $s $sockpl]} { puts $s ">>> $sock >>> [::msgcat::mc pl_auth1 $sockpl]" } }
+      } else {
+        fsend $sockpl [::msgcat::mc pl_notauth]
+        fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc pl_auth2 $sockpl]"
+        foreach s $mysock(plauthed) { if {![string equal $s $sockpl]} { puts $s ">>> $sock >>> [::msgcat::mc pl_auth2 $sockpl]" } }
+      }
     } elseif {[lindex $arg 0]==".close"} {
       if {[lindex $arg 1]==""} {
         closepl $sockpl $sockpl
