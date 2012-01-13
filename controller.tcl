@@ -48,11 +48,53 @@ proc socket_control {sock} {
     return 0
   }
 
+  #<<< PING :irc1.hebeo.fr
   if {[lindex $arg 0]=="PING"} {
     fsend $sock "PONG $mysock(servername) [lindex $arg 1]"; return 0
   }
+  #<<< PASS :tclpur
+  if {[lindex $arg 0]=="PASS"} {
+    set recv_pass [string range [lindex $arg 1] 1 end]
+    if {[testcs $mysock(pass) $recv_pass]} {
+      if {$mysock(debug)==1} { puts "Received password is OK !" }
+    } else {
+      puts "Received password is not OK ! Link abort !"
+      close $sock
+      exit 0
+    }
+  }
+  #<<< SERVER irc1.hebeo.fr 1 :U2310-Fhin6XeOoE-1 Hebeo irc1 server
+  if {[lindex $arg 0]=="SERVER"} {
+    set hubname [lindex $arg 1]
+    #set numeric [lindex $arg 2]
+    if {[testcs $hubname $mysock(hub)]} {
+      if {$mysock(debug)==1} { puts "Received hubname is OK !" }
+    } else {
+      puts "Received hubname is not OK ! Link abort !"
+      close $sock
+      exit 0
+    }
+  }
+  #<<< NETINFO 5 1326465580 2310 MD5:4609f507a584411d7327af344c3ef61c 0 0 0 :Hebeo
   if {[lindex $arg 0]=="NETINFO"} {
-    write_pid; return 0
+    #set maxglobal [lindex $arg 1]
+    set hubtime [lindex $arg 2]
+    set currtime [unixtime]
+    set netname "[string range [lindex $arg 8] 1 end] [lrange $arg 9 end]"
+    if {$hubtime != $currtime} {
+      puts "Cloak are not sync. Difference is [expr $currtime - $hubtime] seconds."
+    }
+    if {![testcs $netname $mysock(networkname)]} {
+      puts "Received network name doesn't correspond to given network name in configuration. I have received $netname but I am waiting for $mysock(networkname). Abort link."
+      foreach bot $mysock(botlist) {
+        fsend $mysock(sock) ":$bot QUIT :Configuration error."
+      }
+      fsend $mysock(sock) ":$mysock(servername) SQUIT $mysock(hub) :Configuration error."
+      close $mysock(sock)
+      exit 0
+    } else {
+      write_pid
+    }
   }
 
   #<<< :Yume JOIN #blabla,#opers
@@ -160,6 +202,7 @@ proc socket_control {sock} {
           fsend $mysock(sock) ":$bot QUIT :[::msgcat::mc cont_shutdown $from]"
         }
         fsend $mysock(sock) ":$mysock(servername) SQUIT $mysock(hub) :[::msgcat::mc cont_shutdown $from]"
+        close $mysock(sock)
         exit 0
       }
       # Commande !flood
