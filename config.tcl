@@ -58,7 +58,7 @@ set mysock(username) tclsh
 set mysock(hostname) "tcl.hebeo.fr"
 set mysock(realname) "TCL GameServer Controller"
 set mysock(adminchan) "#Services"
-set mysock(chanlist) "#UNO #Poker #1000Bornes #opers"
+set mysock(chanlist) "#opers #blabla"
 set mysock(root) "Yume"
 set mysock(cmdchar) "!"
 
