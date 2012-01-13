@@ -119,7 +119,7 @@ proc fsend {sock data} {
 }
 
 proc bot_init { nick user host gecos } {
-  global mysock
+  global mysock network
   fsend $mysock(sock) "TKL + Q * $nick $mysock(servername) 0 [unixtime] :Reserved for Game Server"
   fsend $mysock(sock) "NICK $nick 0 [unixtime] $user $host $mysock(servername) 0 +oSqB * * :$gecos"
   if {$nick==$mysock(nick)} {
@@ -128,12 +128,13 @@ proc bot_init { nick user host gecos } {
       join_chan $mysock(nick) $chan
     }
   }
-  if {[info exists mysock(botlist)]} { lappend mysock(botlist) $nick } else { set mysock(botlist) $nick }
+  if {[info exists mysock(botlist)]} { lappend mysock(botlist) $nick; set mysock(botlist) [nodouble $mysock(botlist)] } else { set mysock(botlist) $nick }
+  if {[info exists network(userlist)]} { lappend network(userlist) $nick; set network(userlist) [nodouble $network(userlist)] } else { set network(userlist) $nick }
   if {$mysock(debug)==1} { puts "My bots are : $mysock(botlist)" }
 }
 
 proc join_chan {bot chan} {
-  global mysock
+  global mysock network
   if {$chan=="0"} {
     fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc botjoin0 $bot]"
   } else {
@@ -144,8 +145,8 @@ proc join_chan {bot chan} {
       fsend $mysock(sock) ":$bot JOIN $chan"
       fsend $mysock(sock) ":$bot MODE $chan +ao $bot $bot"
     }
-    lappend mysock(mychans) $chan
-    set mysock(mychans) [join [nodouble $mysock(mychans)]]
+    if {[info exists mysock(mychans)]} { lappend mysock(mychans) $chan; set mysock(mychans) [join [nodouble $mysock(mychans)]] } else { set mysock(mychans) $bot }
+    if {[info exists network(users-[string tolower $chan])]} { lappend network(users-[string tolower $chan]) $bot; set network(users-[string tolower $chan]) [nodouble $network(users-[string tolower $chan])] } else { set network(users-[string tolower $chan]) $bot }
     if {$mysock(debug)==1} { puts "My chans are : $mysock(mychans)" }
   }
 }
