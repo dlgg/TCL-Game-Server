@@ -64,6 +64,7 @@ proc socket_control {sock} {
     }
   }
   #<<< SERVER irc1.hebeo.fr 1 :U2310-Fhin6XeOoE-1 Hebeo irc1 server
+  #<<< @1 SERVER irc2.hebeo.fr 2 2 :Hebeo irc1 server
   if {[lindex $arg 0]=="SERVER"} {
     set hubname [lindex $arg 1]
     #set numeric [lindex $arg 2]
