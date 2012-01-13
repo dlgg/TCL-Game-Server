@@ -1,4 +1,5 @@
-tcl.pid
+*.pid
+*.log
 *.swp
 uno.cfg
 UnoScores
