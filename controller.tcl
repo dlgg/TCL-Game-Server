@@ -23,8 +23,7 @@
 puts [::msgcat::mc loadmodule "Master Bot Controller"]
 
 proc socket_control {sock} {
-  global mysock
-  global numeric
+  global mysock numeric network
   set argv [gets $sock arg]
   if {$argv=="-1"} {
     puts [::msgcat::mc cont_sockclose]
