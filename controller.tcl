@@ -164,6 +164,15 @@ proc socket_control {sock} {
     }
   }
 
+  #SETHOST
+  #CHGHOST
+
+  #SETIDENT
+  #CHGIDENT
+
+  #SETNAME
+  #CHGNAME
+
   #<<< :Yume JOIN #blabla,#opers
   if {[lindex $arg 1]=="JOIN"} {
     set nick [string range [lindex $arg 0] 1 end]
