@@ -30,8 +30,7 @@ set mysock(poker-realname) "Bot de jeu Poker"
 set mysock(poker-chan) "#Poker"
 
 # Don't modify this
-lappend mysock(gamelist) "poker"
-set mysock(gamelist) [nodouble $mysock(gamelist)]
+if {[info exists mysock(gamelist)]} { lappend mysock(gamelist) "poker"; set mysock(gamelist) [nodouble $mysock(gamelist)] } else { set mysock(gamelist) "poker" }
 if {![info exists network(users-[string tolower $mysock(poker-chan)])]} { set network(users-[string tolower $mysock(poker-chan)]) "" }
 set mysock(proc-[string tolower $mysock(poker-chan)]) "poker_control_pub"
 set mysock(proc-[string tolower $mysock(poker-nick)]) "poker_control_priv"
