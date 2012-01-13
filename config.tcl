@@ -40,6 +40,9 @@ set_lang $mysock(lang)
 # Logging message
 puts [::msgcat::mc loadmodule "Configuration"]
 
+# System configuration
+set mysock(pid) gameserver.pid
+
 # Service configuration
 set mysock(ip) 192.168.42.4
 set mysock(port) 7000

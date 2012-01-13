@@ -38,7 +38,8 @@ proc socket_connect {} {
 
 # Ecriture du pid
 proc write_pid { } {
-  set f [open tcl.pid "WRONLY CREAT TRUNC" 0600]
+  global mysock
+  set f [open $mysock(pid) "WRONLY CREAT TRUNC" 0600]
   puts $f [pid]
   close $f
 }
