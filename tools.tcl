@@ -142,7 +142,7 @@ proc join_chan {bot chan} {
       fsend $mysock(sock) ":$bot JOIN $chan"
       fsend $mysock(sock) ":$bot MODE $chan +qo $bot $bot"
     } else {
-      fsend $mysock(sock) ":$mysock(nick) JOIN $chan"
+      fsend $mysock(sock) ":$bot JOIN $chan"
       fsend $mysock(sock) ":$mysock(nick) MODE $chan +ao $bot $bot"
     }
     if {[info exists mysock(mychans)]} { lappend mysock(mychans) $chan; set mysock(mychans) [join [nodouble $mysock(mychans)]] } else { set mysock(mychans) $bot }
