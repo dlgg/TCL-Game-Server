@@ -189,9 +189,9 @@ proc socket_control {sock} {
     set nick [string range [lindex $arg 0] 1 end]
     set chans [join [split [lindex $arg 2] ,]]
     foreach chan [string tolower $chans] {
-      if {![info exists network(users-$chan)]} { set network(users-$chan) "" }
+      if {![info exists network(users-$chan)]} { set network(users-$chan) $nick }
       if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
-        lappend $network(users-$chan) $nick
+        lappend network(users-$chan) $nick
         set network(users-$chan) [nodouble $network(users-$chan)]
       }
       if {[info exists mysock(join-[string tolower $chan])]} {
@@ -204,9 +204,9 @@ proc socket_control {sock} {
     set nick [string range [lindex $arg 4] 1 end]
     set chans [join [split [lindex $arg 3] ,]]
     foreach chan [string tolower $chans] {
-      if {![info exists network(users-$chan)]} { set network(users-$chan) "" }
+      if {![info exists network(users-$chan)]} { set network(users-$chan) $nick }
       if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
-        lappend $network(users-$chan) $nick
+        lappend network(users-$chan) $nick
         set network(users-$chan) [nodouble $network(users-$chan)]
       }
       if {[info exists mysock(join-[string tolower $chan])]} {
