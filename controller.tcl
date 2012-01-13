@@ -55,7 +55,7 @@ proc socket_control {sock} {
   #<<< PASS :tclpur
   if {[lindex $arg 0]=="PASS"} {
     set recv_pass [string range [lindex $arg 1] 1 end]
-    if {[testcs $mysock(pass) $recv_pass]} {
+    if {[testcs $mysock(password) $recv_pass]} {
       if {$mysock(debug)==1} { puts "Received password is OK !" }
     } else {
       puts "Received password is not OK ! Link abort !"
@@ -80,7 +80,7 @@ proc socket_control {sock} {
     #set maxglobal [lindex $arg 1]
     set hubtime [lindex $arg 2]
     set currtime [unixtime]
-    set netname "[string range [lindex $arg 8] 1 end] [lrange $arg 9 end]"
+    set netname "[string range [lrange $arg 8 end] 1 end]"
     if {$hubtime != $currtime} {
       puts "Cloak are not sync. Difference is [expr $currtime - $hubtime] seconds."
     }
