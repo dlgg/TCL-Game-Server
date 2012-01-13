@@ -137,6 +137,10 @@ proc socket_control {sock} {
     }
   }
 
+  #<<< :Yume UMODE2 +oghaAN
+  if {[lindex $arg 1]=="UMODE2"} {
+    # not in use
+  }
   #<<< :Yume JOIN #blabla,#opers
   if {[lindex $arg 1]=="JOIN"} {
     set nick [string range [lindex $arg 0] 1 end]
