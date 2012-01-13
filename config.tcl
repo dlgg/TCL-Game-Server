@@ -85,7 +85,9 @@ set numeric($mysock(numeric)) $mysock(servername)
 set mysock(mychans) $mysock(adminchan)
 set mysock(gamelist) ""
 
-# Variables for userlists
+# Variables for network
 if {![info exists network(users-[string tolower $mysock(adminchan)])]} { set network(users-[string tolower $mysock(adminchan)]) "" }
 foreach chan [string tolower $mysock(chanlist)] { if {![info exists network(users-$chan)]} { set network(users-$chan) "" } }
+if {![info exists network(userlist)]} { set network(userlist) "" }
+if {![info exists network(chanlist)]} { set network(chanlist) "" }
 
