@@ -97,6 +97,45 @@ proc socket_control {sock} {
     }
   }
 
+  #<<< NICK Yume 1 1326268587 chaton 192.168.42.1 1 0 +iowghaAxNz * 851AC590.11BF4B94.149A40B0.IP :Structure of Body
+  if {[lindex $arg 0]=="NICK"} {
+    set nickname [lindex $arg 1]
+    #set hopcount [lindex $arg 2]
+    #set timestamp [lindex $arg 3]
+    #set ident [lindex $arg 4]
+    #set realhost [lindex $arg 5]
+    #set serv-numeric [lindex $arg 6]
+    #set servicestamp [lindex $arg 7]
+    #set umodes [lindex $arg 8]
+    #set cloakhost [lindex $arg 9]
+    #set vhost [lindex $arg 10]
+    #set gecos [string range [lrange $arg 11 end] 1 end]
+    if {![info exists network(userlist)]} {
+      set network(userlist) $nickname
+    } else {
+      lappend network(userlist) $nickname
+      set network(userlist) [nodouble $network(userlist)]
+    }
+  }
+  #<<< :Yume NICK Yuki 1326485191
+  if {[lindex $arg 1]=="NICK"} {
+    set oldnick [string range [lindex $arg 0] 1 end]
+    set newnick [lindex $arg 2]
+    #set timestamp [lindex $arg 3]
+    if {![info exists network(userlist)]} {
+      set network(userlist) $newnick
+    } else {
+      lremove network(userlist) $oldnick
+      lappend network(userlist) $nickname
+      set network(userlist) [nodouble $network(userlist)]
+      foreach arr [array names network users-*] {
+        lremove $network($arr) $oldnick
+        lappend $network($arr) $newnick
+        set network($arr) [nodouble $network($arr)]
+      }
+    }
+  }
+
   #<<< :Yume JOIN #blabla,#opers
   if {[lindex $arg 1]=="JOIN"} {
     set nick [string range [lindex $arg 0] 1 end]
