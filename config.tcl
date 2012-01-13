@@ -64,7 +64,7 @@ set mysock(cmdchar) "!"
 
 # Partyline configuration
 set mysock(plip) 0.0.0.0
-set mysock(plport) 15000
+set mysock(plport) 45000
 set mysock(plpass) "password"
 
 # Games/Addons
