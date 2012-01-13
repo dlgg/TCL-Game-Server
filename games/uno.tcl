@@ -77,7 +77,7 @@ set mysock(proc-[string tolower $mysock(uno-chan)]) "uno_control_pub"
 set mysock(proc-[string tolower $mysock(uno-nick)]) "uno_control_priv"
 set mysock(join-[string tolower $mysock(uno-chan)]) "uno_control_join"
 nodouble $mysock(gamelist)
-if {![info exists mysock(users-[string tolower $mysock(uno-chan)])]} { set mysock(users-[string tolower $mysock(uno-chan)]) "" }
+if {![info exists network(users-[string tolower $mysock(uno-chan)])]} { set network(users-[string tolower $mysock(uno-chan)]) "" }
 
 proc uno_control_pub { nick text } {
   # nick uhost hand chan arg

@@ -82,11 +82,10 @@ if {[info exists pl]} {
   set mysock(plauthed) ""
 }
 set numeric($mysock(numeric)) $mysock(servername)
-set mysock(users-description) "Array pour les utilisateurs présents sur un chan"
 set mysock(mychans) $mysock(adminchan)
 set mysock(gamelist) ""
 
 # Variables for userlists
-set mysock(users-[string tolower $mysock(adminchan)]) ""
-foreach chan [string tolower $mysock(chanlist)] { set mysock(users-$chan) "" }
+if {![info exists network(users-[string tolower $mysock(adminchan)])]} { set network(users-[string tolower $mysock(adminchan)]) "" }
+foreach chan [string tolower $mysock(chanlist)] { if {![info exists network(users-$chan)]} { set network(users-$chan) "" } }
 
