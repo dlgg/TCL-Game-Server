@@ -140,6 +140,30 @@ proc socket_control {sock} {
   if {[lindex $arg 1]=="UMODE2"} {
     # not in use
   }
+
+  #<<< :s220nov8kjwu9p9 QUIT :Client exited
+  #<<< :Poker-egg QUIT :\[irc1.hebeo.fr\] Local kill by Yume (calin :D)
+  if {[lindex $arg 1]=="QUIT"} {
+    set nickname [string range [lindex $arg 0] 1 end]
+    #set reason [string range [lrange $arg 2 end] 1 end]
+    set network(userlist) [lremove network(userlist) $nickname]
+    foreach arr [array names network users-*] {
+      set network($arr) [lremove $network($arr) $oldnick]
+    }
+  }
+
+  #<<< :Yume KILL Poker-egg :851AC590.11BF4B94.149A40B0.IP!Yume (salope)
+  if {[lindex $arg 1]=="QUIT"} {
+    #set killer [string range [lindex $arg 0] 1 end]
+    set nickname [lindex $arg 2]
+    #set path [string range [lindex $arg 3] 1 end]
+    #set reason [string range [lrange $arg 4 end] 1 end-1]
+    set network(userlist) [lremove network(userlist) $nickname]
+    foreach arr [array names network users-*] {
+      set network($arr) [lremove $network($arr) $nickname]
+    }
+  }
+
   #<<< :Yume JOIN #blabla,#opers
   if {[lindex $arg 1]=="JOIN"} {
     set nick [string range [lindex $arg 0] 1 end]
