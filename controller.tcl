@@ -173,6 +173,17 @@ proc socket_control {sock} {
   #SETNAME
   #CHGNAME
 
+  #<<< :Yume WHOIS Uno :uno
+  if {[lindex $arg 1]=="WHOIS"} {
+    set source [string range [lindex $arg 0] 1 end]
+    set target [string range [lindex $arg 3] 1 end]
+    if {[lsearch [string tolower $mysock(botlist)] [string tolower $target]]<0} { return }
+    fsend $mysock(sock) ":$mysock(nick) PRIVMSG $mysock(adminchan) :[::msgcat::mc cont_whois0 $source $target]"
+    fsend $mysock(sock) ":$mysock(nick) NOTICE $source :[::msgcat::mc cont_whois1 $target]"
+    #fsend $mysock(sock) ":$target 320 whois is not implemented."
+    #fsend $mysock(sock) ":$target 318 :End of /WHOIS list."
+  }
+
   #<<< :Yume JOIN #blabla,#opers
   if {[lindex $arg 1]=="JOIN"} {
     set nick [string range [lindex $arg 0] 1 end]

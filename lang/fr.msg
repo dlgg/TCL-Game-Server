@@ -29,6 +29,8 @@
 ::msgcat::mcset fr cont_notleaveadminchan1 "%s a tenté de me faire partir de %s !"
 ::msgcat::mcset fr cont_leavechan "%s m'a demandé de partir !"
 ::msgcat::mcset fr cont_testflood "Test de flood sur IRC N° %3d"
+::msgcat::mcset fr cont_whois0 "%s vient d'essayer de whois %s"
+::msgcat::mcset fr cont_whois1 "Merci de ne pas whois %s"
 
 # Messages for partyline
 ::msgcat::mcset fr pl_activation "Activation de la PL sur %s:%s."

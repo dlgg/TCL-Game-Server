@@ -29,6 +29,8 @@
 ::msgcat::mcset en cont_notleaveadminchan1 "%s tried to make me leave of channel %s !"
 ::msgcat::mcset en cont_leavechan "%s ask me to leave !"
 ::msgcat::mcset en cont_testflood "Flood test on IRC N° %3d"
+::msgcat::mcset en cont_whois0 "%s has try to whois %s"
+::msgcat::mcset en cont_whois1 "Please don't whois %s"
 
 # Messages for partyline
 ::msgcat::mcset en pl_activation "Activation of partyline on %s:%s."
