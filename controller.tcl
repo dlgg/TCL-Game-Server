@@ -114,8 +114,7 @@ proc socket_control {sock} {
     if {![info exists network(userlist)]} {
       set network(userlist) $nickname
     } else {
-      lappend network(userlist) $nickname
-      set network(userlist) [nodouble $network(userlist)]
+      set network(userlist) [nodouble [lappend network(userlist) $nickname]]
     }
   }
   #<<< :Yume NICK Yuki 1326485191
@@ -126,13 +125,11 @@ proc socket_control {sock} {
     if {![info exists network(userlist)]} {
       set network(userlist) $newnick
     } else {
-      lremove network(userlist) $oldnick
-      lappend network(userlist) $nickname
-      set network(userlist) [nodouble $network(userlist)]
+      set network(userlist) [lremove network(userlist) $oldnick]
+      set network(userlist) [nodouble [lappend network(userlist) $nickname]]
       foreach arr [array names network users-*] {
-        lremove $network($arr) $oldnick
-        lappend $network($arr) $newnick
-        set network($arr) [nodouble $network($arr)]
+        set network($arr) [lremove $network($arr) $oldnick]
+        set network($arr) [nodouble [lappend $network($arr) $newnick]]
       }
     }
   }
