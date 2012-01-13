@@ -25,8 +25,7 @@ puts [::msgcat::mc loadaddon "YouTube"]
 package require http
 
 # Register Master Bot Addon
-lappend mysock(proc-addon) "youtube_control"
-set mysock(proc-addon) [nodouble $mysock(proc-addon)]
+if {[info exists mysock(proc-addon)]} { lappend mysock(proc-addon) "youtube_control"; set mysock(proc-addon) [nodouble $mysock(proc-addon)] } else { set mysock(proc-addon) "youtube_control" }
 
 # Vars for addon
 set youtube(logo) "\002\00301,00You\00300,04Tube\002\017"
