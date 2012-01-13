@@ -27,7 +27,7 @@ startprocess() {
   if testprocess; then
     echo "TCL Game Service is already running." >&2
   else
-    nohup $tclsh ./main.tcl >$logfile 2>&1 &
+    nohup $tclsh ./main.tcl >>$logfile 2>&1 &
   fi
 }
 
