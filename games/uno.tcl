@@ -73,10 +73,10 @@ set UnoNTC "NOTICE"
 
 # Don't modify this
 lappend mysock(gamelist) "uno"
+set mysock(gamelist) [nodouble $mysock(gamelist)]
 set mysock(proc-[string tolower $mysock(uno-chan)]) "uno_control_pub"
 set mysock(proc-[string tolower $mysock(uno-nick)]) "uno_control_priv"
 set mysock(join-[string tolower $mysock(uno-chan)]) "uno_control_join"
-nodouble $mysock(gamelist)
 if {![info exists network(users-[string tolower $mysock(uno-chan)])]} { set network(users-[string tolower $mysock(uno-chan)]) "" }
 
 proc uno_control_pub { nick text } {
