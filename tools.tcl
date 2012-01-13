@@ -156,8 +156,8 @@ proc game_init {} {
   foreach game $mysock(gamelist) {
     if {$mysock(debug)==1} { puts "Load game : $game" }
     bot_init $mysock($game-nick) $mysock($game-username) $mysock($game-hostname) $mysock($game-realname)
-    join_chan $mysock($game-nick) $mysock($game-chan)
     join_chan $mysock(nick) $mysock($game-chan)
+    join_chan $mysock($game-nick) $mysock($game-chan)
   }
 }
 
