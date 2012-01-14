@@ -81,7 +81,7 @@ set mysock(join-[string tolower $mysock(uno-chan)]) "uno_control_join"
 proc uno_control_pub { nick text } {
   # nick uhost hand chan arg
   global mysock UnoOn UnoPaused Debug
-  if {$Debug == 1 } { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PUB \002 $nick > [join $text]" }
+  #if {$Debug == 1 } { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PUB \002 $nick > [join $text]" }
   if {[string equal -nocase "!uno-reset" [lindex $text 0]]} { UnoReset; set UnoOn 0 }
   if {[string equal -nocase "!uno" [lindex $text 0]]} { UnoInit $nick "none" "-" $mysock(uno-chan) "$text" }
   if {[string equal -nocase "!unocmds" [lindex $text 0]]} { UnoCmds $nick "none" "-" $mysock(uno-chan) "$text" }
@@ -139,8 +139,7 @@ proc uno_control_pub { nick text } {
 
 proc uno_control_priv { nick text } {
   global mysock
-  if {$mysock(debug)==1} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PRIV\002 $nick > [join $text]" }
-  return
+  #if {$mysock(debug)==1} { fsend $mysock(sock) ":$mysock(uno-nick) PRIVMSG $mysock(uno-chan) :\002PRIV\002 $nick > [join $text]" }
 }
 
 proc uno_control_join { nick } {

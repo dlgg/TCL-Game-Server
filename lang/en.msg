@@ -31,6 +31,7 @@
 ::msgcat::mcset en cont_testflood "Flood test on IRC N° %3d"
 ::msgcat::mcset en cont_whois0 "%s has try to whois %s"
 ::msgcat::mcset en cont_whois1 "Please don't whois %s"
+::msgcat::mcset en cont_notachan "This command is only available on a channel."
 
 # Messages for partyline
 ::msgcat::mcset en pl_activation "Activation of partyline on %s:%s."

@@ -31,6 +31,7 @@
 ::msgcat::mcset fr cont_testflood "Test de flood sur IRC N° %3d"
 ::msgcat::mcset fr cont_whois0 "%s vient d'essayer de whois %s"
 ::msgcat::mcset fr cont_whois1 "Merci de ne pas whois %s"
+::msgcat::mcset fr cont_notachan "Cette commande n'est disponible que sur un salon."
 
 # Messages for partyline
 ::msgcat::mcset fr pl_activation "Activation de la PL sur %s:%s."

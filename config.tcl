@@ -81,7 +81,7 @@ if {[info exists pl]} {
   set mysock(pl) ""
   set mysock(plauthed) ""
 }
-set numeric($mysock(numeric)) $mysock(servername)
+set network(servername-$mysock(numeric)) $mysock(servername)
 set mysock(mychans) $mysock(adminchan)
 set mysock(gamelist) ""
 

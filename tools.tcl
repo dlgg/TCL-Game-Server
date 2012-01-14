@@ -152,8 +152,18 @@ proc join_chan {bot chan} {
 }
 
 proc game_init {} {
+  global mysock network
+  foreach game $mysock(gamelist) {
+    if {$mysock(debug)==1} { puts "Load game : $game" }
+    bot_init $mysock($game-nick) $mysock($game-username) $mysock($game-hostname) $mysock($game-realname)
+    join_chan $mysock(nick) $mysock($game-chan)
+    join_chan $mysock($game-nick) $mysock($game-chan)
+  }
+}
+proc gamebot_init {bot} {
   global mysock
   foreach game $mysock(gamelist) {
+    if {[string tolower $mysock($game-nick)]!=[string tolower $bot]} { continue }
     if {$mysock(debug)==1} { puts "Load game : $game" }
     bot_init $mysock($game-nick) $mysock($game-username) $mysock($game-hostname) $mysock($game-realname)
     join_chan $mysock(nick) $mysock($game-chan)
@@ -166,4 +176,4 @@ proc is_admin { nick } {
   if {[string equal -nocase $nick $mysock(root)]} { return 1 }
   return 0
 }
-
+proc ischan { chan } { if {[string index $chan 0]=="#"} { return 1 } else { return 0 } }

@@ -23,7 +23,7 @@
 puts [::msgcat::mc loadmodule "Master Bot Controller"]
 
 proc socket_control {sock} {
-  global mysock numeric network
+  global mysock network
   set argv [gets $sock arg]
   if {$argv=="-1"} {
     puts [::msgcat::mc cont_sockclose]
@@ -63,12 +63,14 @@ proc socket_control {sock} {
     }
   }
   #<<< SERVER irc1.hebeo.fr 1 :U2310-Fhin6XeOoE-1 Hebeo irc1 server
-  #<<< @1 SERVER irc2.hebeo.fr 2 2 :Hebeo irc1 server
   if {[lindex $arg 0]=="SERVER"} {
     set hubname [lindex $arg 1]
-    #set numeric [lindex $arg 2]
+    set numeric [lindex $arg 2]
+    set description [lrange $arg 4 end]
     if {[testcs $hubname $mysock(hub)]} {
       if {$mysock(debug)==1} { puts "Received hubname is OK !" }
+      set network(servername-$numeric) $hubname
+      set network(serverdesc-$numeric) $description
     } else {
       puts "Received hubname is not OK ! Link abort !"
       close $sock
@@ -104,7 +106,7 @@ proc socket_control {sock} {
     #set timestamp [lindex $arg 3]
     #set ident [lindex $arg 4]
     #set realhost [lindex $arg 5]
-    #set serv-numeric [lindex $arg 6]
+    set numeric [lindex $arg 6]
     #set servicestamp [lindex $arg 7]
     #set umodes [lindex $arg 8]
     #set cloakhost [lindex $arg 9]
@@ -115,6 +117,12 @@ proc socket_control {sock} {
     } else {
       lappend network(userlist) $nickname
       set network(userlist) [nodouble $network(userlist)]
+    }
+    if {![info exists network(users-[string tolower $network(servername-$numeric)])]} {
+      set network(users-[string tolower $network(servername-$numeric)]) $nickname
+    } else {
+      lappend network(users-[string tolower $network(servername-$numeric)]) $nickname
+      set network(users-[string tolower $network(servername-$numeric)]) [nodouble $network(users-[string tolower $network(servername-$numeric)])]
     }
   }
   #<<< :Yume NICK Yuki 1326485191
@@ -148,12 +156,12 @@ proc socket_control {sock} {
     #set reason [string range [lrange $arg 2 end] 1 end]
     set network(userlist) [lremove network(userlist) $nickname]
     foreach arr [array names network users-*] {
-      set network($arr) [lremove $network($arr) $oldnick]
+      set network($arr) [lremove $network($arr) $nickname]
     }
   }
 
   #<<< :Yume KILL Poker-egg :851AC590.11BF4B94.149A40B0.IP!Yume (salope)
-  if {[lindex $arg 1]=="QUIT"} {
+  if {[lindex $arg 1]=="KILL"} {
     #set killer [string range [lindex $arg 0] 1 end]
     set nickname [lindex $arg 2]
     #set path [string range [lindex $arg 3] 1 end]
@@ -161,6 +169,14 @@ proc socket_control {sock} {
     set network(userlist) [lremove network(userlist) $nickname]
     foreach arr [array names network users-*] {
       set network($arr) [lremove $network($arr) $nickname]
+    }
+    if {[lindex $arg 2]==$mysock(nick)} {
+      bot_init $mysock(nick) $mysock(username) $mysock(hostname) $mysock(realname)
+    }
+    foreach game $mysock(gamelist) {
+      if {[lindex $arg 2]==$game} {
+        gamebot_init $nickname
+      }
     }
   }
 
@@ -184,11 +200,44 @@ proc socket_control {sock} {
     #fsend $mysock(sock) ":$target 318 :End of /WHOIS list."
   }
 
-  #<<< :Yume JOIN #blabla,#opers
-  if {[lindex $arg 1]=="JOIN"} {
-    set nick [string range [lindex $arg 0] 1 end]
-    set chans [join [split [lindex $arg 2] ,]]
-    foreach chan [string tolower $chans] {
+  #<<< @1 SERVER irc2.hebeo.fr 2 2 :Hebeo irc1 server
+  # Introducing distant server by hub
+  if {[lindex $arg 1]=="SERVER"} {
+    #set srcnumeric [string range [lindex $arg 0] 1 end]
+    set servername [lindex $arg 2]
+    #set hopcount [lindex $arg 3]
+    set numeric [lindex $arg 4]
+    set description [string range [lrange $arg 5 end] 1 end]
+    set network(servername-$numeric) $servername
+    set network(serverdesc-$numeric) $description
+  }
+
+  #<<< SQUIT irc2.hebeo.fr :Yume
+  if {[lindex $arg 0]=="SQUIT"} {
+    set servername [lindex $arg 1]
+    #set reason [string range [lrange $arg 2 end] 1 end]
+    foreach user $network(users-[string tolower $servername]) {
+      set network(userlist) [lremove network(userlist) $user]
+      foreach arr [array names network users-*] {
+        set network($arr) [lremove $network($arr) $user]
+      }
+    }
+  }
+
+  #SDESC
+
+  #STATS
+
+
+  #<<< @1 SJOIN 1325144112 #Poker :Yume 
+  if {[lindex $arg 1]=="SJOIN"} {
+    #set numeric [string range [lindex $arg 0] 1 end]
+    #set timestamp [lindex $arg 2]
+    set chan [lindex $arg 3]
+    set nicks [lindex [split $arg :] 1]
+    #set nick [string range [lindex $arg 4] 1 end]
+    foreach nick [string tolower $nicks] {
+      if {![string is alnum [string index $nick 0]]} { continue }
       if {![info exists network(users-$chan)]} { set network(users-$chan) $nick }
       if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
         lappend network(users-$chan) $nick
@@ -199,10 +248,10 @@ proc socket_control {sock} {
       }
     }
   }
-  #<<< @1 SJOIN 1325144112 #Poker :Yume 
-  if {[lindex $arg 1]=="SJOIN"} {
-    set nick [string range [lindex $arg 4] 1 end]
-    set chans [join [split [lindex $arg 3] ,]]
+  #<<< :Yume JOIN #blabla,#opers
+  if {[lindex $arg 1]=="JOIN"} {
+    set nick [string range [lindex $arg 0] 1 end]
+    set chans [join [split [lindex $arg 2] ,]]
     foreach chan [string tolower $chans] {
       if {![info exists network(users-$chan)]} { set network(users-$chan) $nick }
       if {[lsearch [string tolower $mysock(mychans)] [string tolower $chan]] > 0} {
@@ -298,6 +347,14 @@ proc socket_control {sock} {
           fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :[::msgcat::mc cont_testflood $num]"
         }
       }
+      # Commande !chanlist
+      if {[string equal -nocase "$mysock(cmdchar)chanlist" [lindex $comm 0]]} {
+        if {[ischan $to]} {
+          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :$network(users-[string tolower $to])"
+        } else {
+          fsend $mysock(sock) ":$mysock(nick) PRIVMSG $to :[::msgcat::mc cont_notachan]"
+        }
+      }
 #      # Commande !restart
 #      if {[string equal -nocase "$mysock(cmdchar)restart" [lindex $comm 0]]} {
 #        fsend $mysock(sock) ":$mysock(nick) PRIVMSG $from :OK je restart !"
@@ -324,7 +381,6 @@ proc socket_control {sock} {
     }
     return 0
   }
-  if {[lindex $arg 1]=="KILL"&&[lindex $arg 2]==$mysock(nick)} { bot_init $mysock(nick) $mysock(username) $mysock(hostname) $mysock(realname); return 0 }
   if {[lindex $arg 1]=="KICK"} {
     set to [lindex $arg 2]
     if {[lindex $arg 3]==$mysock(nick)} {
