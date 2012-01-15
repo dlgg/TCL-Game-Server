@@ -87,6 +87,29 @@ proc nodouble { var } {
   return $final
 }
 
+# Conversion of unreal server numeric from unreal specific base 64 to decimal
+set mysock(chars) { 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e f g h i j k l m n o p q r s t u v w x y z \{ \} }
+proc dec2base { num baselist } {
+  set res {}
+  set base [llength $baselist]
+  while {$num/$base != 0} {
+    set rest [expr { $num % $base } ]
+    set res [lindex $baselist $rest]$res
+    set num [expr { $num / $base } ]
+  }
+  set res [lindex $baselist $num]$res
+  return $res
+}
+proc base2dec { num baselist } {
+  set sum 0
+  foreach char [split $num ""] {
+    set d [lsearch $baselist $char]
+    if {$d == -1} {error "invalid unrealbase-64 digit '$char' in $num"}
+    set sum [expr {$sum * 64 + $d}]
+  }
+  return $sum
+}
+
 # Proc gestion du service
 proc my_rehash {} {
   global mysock

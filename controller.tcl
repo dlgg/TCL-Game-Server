@@ -99,7 +99,9 @@ proc socket_control {sock} {
     }
   }
 
-  #<<< NICK Yume 1 1326268587 chaton 192.168.42.1 1 0 +iowghaAxNz * 851AC590.11BF4B94.149A40B0.IP :Structure of Body
+  #<<< NICK nick       hopcount timestamp  username hostname      server servicestamp +usermodes  virtualhost cloakhost                     :realname
+  #<<< NICK Yume       1        1326268587 chaton   192.168.42.1  1      0            +iowghaAxNz *           851AC590.11BF4B94.149A40B0.IP :Structure of Body
+  #<<< NICK GameServer 1        1326641549 tclsh    tcl.hebeo.fr  g      0            +oSqB       *           heb1-EAB106C8.hebeo.fr        :TCL GameServer Controller
   if {[lindex $arg 0]=="NICK"} {
     set nickname [lindex $arg 1]
     #set hopcount [lindex $arg 2]
@@ -118,11 +120,11 @@ proc socket_control {sock} {
       lappend network(userlist) $nickname
       set network(userlist) [nodouble $network(userlist)]
     }
-    if {![info exists network(users-[string tolower $network(servername-$numeric)])]} {
-      set network(users-[string tolower $network(servername-$numeric)]) $nickname
+    if {![info exists network(users-[string tolower $network(servername-[base2dec $numeric $mysock(chars)])])]} {
+      set network(users-[string tolower $network(servername-[base2dec $numeric $mysock(chars)])]) $nickname
     } else {
-      lappend network(users-[string tolower $network(servername-$numeric)]) $nickname
-      set network(users-[string tolower $network(servername-$numeric)]) [nodouble $network(users-[string tolower $network(servername-$numeric)])]
+      lappend network(users-[string tolower $network(servername-[base2dec $numeric $mysock(chars)])]) $nickname
+      set network(users-[string tolower $network(servername-[base2dec $numeric $mysock(chars)])]) [nodouble $network(users-[string tolower $network(servername-[base2dec $numeric $mysock(chars)])])]
     }
   }
   #<<< :Yume NICK Yuki 1326485191
