@@ -291,7 +291,7 @@ proc socket_control {sock} {
       $mysock(proc-[string tolower $to]) $from "$comm"
     }
     if {[info exists mysock(proc2-[string tolower $to])]} {
-      $mysock(proc2-[string tolower $to]) $from "$comm"
+      $mysock(proc2-[string tolower $to]) $from [join $comm]
     }
 
     if {[string match $mysock(root) [string range [lindex $arg 0] 1 end]] || [string match Yuki [string range [lindex $arg 0] 1 end]]} {

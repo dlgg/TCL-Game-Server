@@ -43,6 +43,6 @@ proc ::poker::control_pub { nick text } {
   fsend $::mysock(sock) ":$::poker::nick PRIVMSG $::poker::chan :\002PUB \002 $nick > [join $text]"
 }
   
-proc control_priv { nick text } {
+proc ::poker::control_priv { nick text } {
   fsend $::mysock(sock) ":$::poker::nick PRIVMSG $::poker::chan :\002PRIV\002 $nick > [join $text]"
 }
