@@ -68,7 +68,7 @@ set mysock(plport) 45000
 set mysock(plpass) "password"
 
 # Games/Addons
-set mysock(toload) "uno poker youtube"
+set mysock(toload) "uno youtube poker"
 
 # Internal variables
 set mysock(version) "0.1"
@@ -84,6 +84,7 @@ if {[info exists pl]} {
 set network(servername-$mysock(numeric)) $mysock(servername)
 set mysock(mychans) $mysock(adminchan)
 set mysock(gamelist) ""
+set mysock(gamelist2) ""
 
 # Variables for network
 if {![info exists network(users-[string tolower $mysock(adminchan)])]} { set network(users-[string tolower $mysock(adminchan)]) "" }

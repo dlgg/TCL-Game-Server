@@ -180,6 +180,11 @@ proc socket_control {sock} {
         gamebot_init $nickname
       }
     }
+    foreach game $mysock(gamelist2) {
+      if {[lindex $arg 2]==$game} {
+        gamebot_init $nickname
+      }
+    }
   }
 
   #SETHOST
@@ -284,6 +289,9 @@ proc socket_control {sock} {
     # Send info to bot who need it
     if {[info exists mysock(proc-[string tolower $to])]} {
       $mysock(proc-[string tolower $to]) $from "$comm"
+    }
+    if {[info exists mysock(proc2-[string tolower $to])]} {
+      $mysock(proc2-[string tolower $to]) $from "$comm"
     }
 
     if {[string match $mysock(root) [string range [lindex $arg 0] 1 end]] || [string match Yuki [string range [lindex $arg 0] 1 end]]} {

@@ -22,26 +22,27 @@
 ##############################################################################
 puts [::msgcat::mc loadgame "Poker"]
 
-# Parametres pour le jeu Poker
-set mysock(poker-nick) "Poker"
-set mysock(poker-username) "poker"
-set mysock(poker-hostname) "poker.$mysock(hostname)"
-set mysock(poker-realname) "Bot de jeu Poker"
-set mysock(poker-chan) "#Poker"
+namespace eval poker {
+  namespace export *
 
-# Don't modify this
-if {[info exists mysock(gamelist)]} { lappend mysock(gamelist) "poker"; set mysock(gamelist) [nodouble $mysock(gamelist)] } else { set mysock(gamelist) "poker" }
-if {![info exists network(users-[string tolower $mysock(poker-chan)])]} { set network(users-[string tolower $mysock(poker-chan)]) "" }
-set mysock(proc-[string tolower $mysock(poker-chan)]) "poker_control_pub"
-set mysock(proc-[string tolower $mysock(poker-nick)]) "poker_control_priv"
-
-proc poker_control_pub { nick text } {
-  global mysock
-  fsend $mysock(sock) ":$mysock(poker-nick) PRIVMSG $mysock(poker-chan) :\002PUB \002 $nick > [join $text]"
+  # Parametres pour le jeu Poker
+  variable nick "Poker"
+  variable username "poker"
+  variable hostname "poker.$::mysock(hostname)"
+  variable realname "Bot de jeu Poker"
+  variable chan "#Poker"
+  
+  # Don't modify this
+  if {[info exists ::mysock(gamelist2)]} { lappend ::mysock(gamelist2) "poker"; set ::mysock(gamelist2) [::nodouble $::mysock(gamelist2)] } else { set ::mysock(gamelist2) "poker" }
+  if {![info exists ::network(users-[string tolower $poker::chan])]} { set ::network(users-[string tolower $poker::chan]) "" }
+  set ::mysock(proc2-[string tolower $::poker::chan]) "::poker::control_pub"
+  set ::mysock(proc2-[string tolower $::poker::nick]) "::poker::control_priv"
 }
 
-proc poker_control_priv { nick text } {
-  global mysock
-  fsend $mysock(sock) ":$mysock(poker-nick) PRIVMSG $mysock(poker-chan) :\002PRIV\002 $nick > [join $text]"
+proc ::poker::control_pub { nick text } {
+  fsend $::mysock(sock) ":$::poker::nick PRIVMSG $::poker::chan :\002PUB \002 $nick > [join $text]"
 }
-
+  
+proc control_priv { nick text } {
+  fsend $::mysock(sock) ":$::poker::nick PRIVMSG $::poker::chan :\002PRIV\002 $nick > [join $text]"
+}

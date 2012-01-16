@@ -182,6 +182,13 @@ proc game_init {} {
     join_chan $mysock(nick) $mysock($game-chan)
     join_chan $mysock($game-nick) $mysock($game-chan)
   }
+  foreach game $mysock(gamelist2) {
+    if {$mysock(debug)==1} { puts "Load game2 : $game" }
+    bot_init [set ::${game}::nick] [set ::${game}::username] [set ::${game}::hostname] [set ::${game}::realname]
+    join_chan $mysock(nick) [set ::${game}::chan]
+    join_chan [set ::${game}::nick] [set ::${game}::chan]
+  }
+  return
 }
 proc gamebot_init {bot} {
   global mysock
@@ -192,6 +199,14 @@ proc gamebot_init {bot} {
     join_chan $mysock(nick) $mysock($game-chan)
     join_chan $mysock($game-nick) $mysock($game-chan)
   }
+  foreach game $mysock(gamelist2) {
+    if {[string tolower [set ::${game}::nick]]!=[string tolower $bot]} { continue }
+    if {$mysock(debug)==1} { puts "Load game2 : $game" }
+    bot_init [set ::${game}::nick] [set ::${game}::username] [set ::${game}::hostname] [set ::${game}::realname]
+    join_chan $mysock(nick) [set ::${game}::chan]
+    join_chan [set ::${game}::nick] [set ::${game}::chan]
+  }
+  return
 }
 
 proc is_admin { nick } {
