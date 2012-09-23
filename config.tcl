@@ -68,7 +68,7 @@ set mysock(plport) 45000
 set mysock(plpass) "password"
 
 # Games/Addons
-set mysock(toload) "uno youtube poker"
+set mysock(toload) "uno poker"
 
 # Internal variables
 set mysock(version) "0.1"
