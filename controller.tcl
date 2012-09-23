@@ -136,7 +136,7 @@ proc socket_control {sock} {
       set network(userlist) $newnick
     } else {
       set network(userlist) [lremove network(userlist) $oldnick]
-      lappend network(userlist) $nickname]
+      lappend network(userlist) $newnick]
       set network(userlist) [nodouble $network(userlist)]
       foreach arr [array names network users-*] {
         set network($arr) [lremove $network($arr) $oldnick]
